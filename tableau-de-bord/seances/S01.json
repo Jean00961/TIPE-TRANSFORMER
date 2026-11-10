@@ -1,0 +1,218 @@
+{
+  "id": "S01",
+  "numero": 1,
+  "titre": "Le neurone et le perceptron",
+  "date": "2026-11-17",
+  "phase": 1,
+  "pilote": "Jean",
+  "copilote": "Binôme",
+  "genere_le": "2026-11-10",
+  "objectif": "Écrire et tester un neurone vectorisé et un perceptron qui apprend ET et OU, puis constater qu'il échoue sur XOR.",
+
+  "etat": {
+    "resume": "C'est la première séance de code. Déjà en place : la tokenisation (`src/data.py`, réutilisée en S8), le README et le plan des 14 séances. Pas de reliquat.",
+    "reliquats": [],
+    "alertes": [
+      "Le poste sur lequel le dépôt a été préparé a **Python 3.6.3**, trop ancien pour les versions actuelles de NumPy et de pytest. Installer Python 3.11 ou plus avant mardi, sinon la mise en place de l'environnement va déborder sur le code."
+    ]
+  },
+
+  "acquis": [
+    "Écrire l'équation d'un neurone et l'interpréter comme un hyperplan dont $w$ est le vecteur normal.",
+    "Énoncer la règle du perceptron et expliquer pourquoi elle corrige une erreur.",
+    "Citer le théorème de convergence et ses hypothèses (séparabilité avec marge).",
+    "Démontrer en 4 inégalités que XOR n'est pas linéairement séparable.",
+    "Calculer sur un batch avec `X @ w + b` en contrôlant la forme de chaque tableau."
+  ],
+
+  "deroule": [
+    { "debut": 0, "fin": 10, "titre": "Mise en route", "qui": "Chacun seul", "contenu": "Pas de séance précédente : chacun répond seul aux questions de rappel ci-dessous, puis on compare." },
+    { "debut": 10, "fin": 15, "titre": "Relance", "qui": "Pilote", "contenu": "Pas encore de tests à lancer : vérifier `python --version` (3.11 ou plus) et l'accès au dépôt." },
+    { "debut": 15, "fin": 40, "titre": "Théorie", "qui": "Les deux", "contenu": "Les 5 notions ci-dessous, sur papier. La preuve pour XOR se fait au tableau." },
+    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Tâches 1 à 4, chaque fonction suivie aussitôt de son test." },
+    { "debut": 105, "fin": 115, "titre": "Explication croisée", "qui": "Copilote", "contenu": "Le copilote explique `perceptron.py` à voix haute, comme devant le jury." },
+    { "debut": 115, "fin": 120, "titre": "Clôture", "qui": "Pilote", "contenu": "Entrée dans `journal.md` (bloc à copier en bas de page), commit « S1 », push." }
+  ],
+
+  "rappel_actif": [
+    {
+      "question": "Sans rien regarder : que calcule un neurone artificiel, à votre avis ? Une phrase chacun.",
+      "reponse": "On compare après la théorie. Réponse attendue : une somme pondérée des entrées plus un biais, $w \\cdot x + b$, passée dans une fonction d'activation."
+    },
+    {
+      "question": "Qu'est-ce que le *broadcasting* en NumPy ? Donner un exemple.",
+      "reponse": "NumPy étend automatiquement un tableau de forme compatible. `X + b` avec `X` de forme `(n, d)` et `b` de forme `(d,)` ajoute `b` à chaque ligne de `X`."
+    }
+  ],
+
+  "theorie": [
+    {
+      "id": "t1",
+      "titre": "Le neurone formel",
+      "duree": 6,
+      "au_tableau": false,
+      "contenu": "Un neurone reçoit un vecteur d'entrées $x \\in \\mathbb{R}^d$, calcule une **combinaison affine**, puis applique une **fonction d'activation** $\\varphi$. Pour le perceptron, $\\varphi$ est l'échelon de Heaviside : $\\varphi(z) = 1$ si $z \\ge 0$, et $0$ sinon.\n\n**Lecture géométrique.** L'ensemble $\\{x \\mid w \\cdot x + b = 0\\}$ est un hyperplan (une droite en dimension 2). Le neurone répond 1 d'un côté et 0 de l'autre. Le vecteur $w$ est **normal** à l'hyperplan et pointe vers le côté « 1 ». La distance de l'origine à l'hyperplan vaut $|b| / \\lVert w \\rVert$.",
+      "formule": "y = \\varphi(w \\cdot x + b)",
+      "dimensions": "$x$ : `(d,)` · $w$ : `(d,)` · $b$ : scalaire · $y$ : scalaire",
+      "piege": "Prendre $w$ pour la direction de la droite : il lui est **orthogonal**. Pour tracer la frontière en 2D, on isole $x_2 = -(w_1 x_1 + b) / w_2$."
+    },
+    {
+      "id": "t2",
+      "titre": "La règle d'apprentissage du perceptron",
+      "duree": 6,
+      "au_tableau": false,
+      "contenu": "On parcourt les exemples $(x_i, y_i)$ un par un. Après chaque prédiction $\\hat y_i$, on corrige $w$ avec la formule ci-dessus, sans oublier le biais :\n$$b \\leftarrow b + \\eta\\,(y_i - \\hat y_i)$$\n- Si $\\hat y_i = y_i$, la différence est nulle : rien ne bouge.\n- Si on a répondu 0 au lieu de 1, on ajoute $\\eta x_i$ à $w$ : $w \\cdot x_i$ augmente et l'hyperplan bascule vers le bon côté.\n- Si on a répondu 1 au lieu de 0, on retranche $\\eta x_i$.\n\nUne **époque** est un passage complet sur les données. On compte les erreurs à chaque époque : une époque sans erreur signifie que tout est bien classé, on peut s'arrêter.",
+      "formule": "w \\leftarrow w + \\eta\\,(y_i - \\hat y_i)\\,x_i",
+      "dimensions": "$x_i$, $w$ : `(d,)` · $y_i, \\hat y_i \\in \\{0, 1\\}$ · $\\eta > 0$",
+      "piege": "Oublier la mise à jour de $b$ : l'hyperplan est alors forcé de passer par l'origine. Sur ET, l'exemple $(0, 0)$ donne $w \\cdot x = 0$, donc $\\hat y = 1$ : il est **toujours** mal classé."
+    },
+    {
+      "id": "t3",
+      "titre": "Théorème de convergence (Novikoff, 1962)",
+      "duree": 5,
+      "au_tableau": false,
+      "contenu": "On absorbe le biais dans le vecteur : $\\tilde x = (x, 1)$ et $\\tilde w = (w, b)$. On note les classes $-1$ et $+1$, et on part de $\\tilde w = 0$.\n\n**Hypothèses.** Les données sont linéairement séparables **avec une marge** $\\gamma > 0$ : il existe $w^*$ de norme 1 tel que $y_i\\,(w^* \\cdot \\tilde x_i) \\ge \\gamma$ pour tout $i$. De plus, $\\lVert \\tilde x_i \\rVert \\le R$.\n\n**Conclusion.** Le perceptron fait au plus $(R / \\gamma)^2$ corrections au total, puis ne se trompe plus.\n\nÀ **citer** en séance, pas à démontrer. La preuve encadre $w \\cdot w^*$ par en dessous et $\\lVert w \\rVert^2$ par au-dessus : bon exercice pour la maison, et question de jury possible.",
+      "formule": "\\text{nombre de corrections} \\le \\left(\\frac{R}{\\gamma}\\right)^2",
+      "dimensions": "",
+      "piege": "Le théorème ne dit **rien** si les données ne sont pas séparables : l'algorithme ne s'arrête jamais et $w$ oscille. C'est exactement ce qu'on va observer sur XOR."
+    },
+    {
+      "id": "t4",
+      "titre": "XOR n'est pas linéairement séparable",
+      "duree": 5,
+      "au_tableau": true,
+      "contenu": "XOR vaut 1 si exactement une des deux entrées vaut 1. Supposons qu'un neurone $(w_1, w_2, b)$ le calcule. Les 4 points imposent :\n1. $(0, 0) \\mapsto 0$ : $b < 0$\n2. $(1, 1) \\mapsto 0$ : $w_1 + w_2 + b < 0$\n3. $(1, 0) \\mapsto 1$ : $w_1 + b \\ge 0$\n4. $(0, 1) \\mapsto 1$ : $w_2 + b \\ge 0$\n\nEn sommant 3 et 4 : $w_1 + w_2 + 2b \\ge 0$, donc $w_1 + w_2 + b \\ge -b > 0$ d'après 1. C'est contraire à 2. **Aucune droite ne sépare XOR.**\n\nCette limite (Minsky et Papert, 1969) motive les réseaux à plusieurs couches : ce sera la séance S3.",
+      "formule": "",
+      "dimensions": "",
+      "piege": "Ce n'est pas un problème d'apprentissage (plus d'époques, autre $\\eta$) : c'est une impossibilité de **représentation**. Aucun réglage ne peut la contourner."
+    },
+    {
+      "id": "t5",
+      "titre": "Convention NumPy : un batch d'exemples",
+      "duree": 3,
+      "au_tableau": false,
+      "contenu": "On empile les $n$ exemples en lignes dans une matrice $X$ de forme `(n, d)`. Les $n$ sorties s'obtiennent en une ligne :\n```\nZ = X @ w + b              # (n, d) @ (d,) -> (n,), puis b est diffusé\ny_chapeau = (Z >= 0).astype(int)\n```\nCette ligne remplace la boucle sur les exemples. Elle est bien plus rapide, car le calcul est fait en code compilé et non par l'interpréteur Python.",
+      "formule": "",
+      "dimensions": "$X$ : `(n, d)` · $w$ : `(d,)` · $b$ : scalaire · $Z$ : `(n,)`",
+      "piege": "Si `w` a la forme `(d, 1)` au lieu de `(d,)`, alors `Z` a la forme `(n, 1)`, et `y - Z` avec `y` de forme `(n,)` devient sans prévenir une matrice `(n, n)`. Toujours vérifier avec `assert Z.shape == (n,)`."
+    }
+  ],
+
+  "taches": [
+    {
+      "id": "c1",
+      "titre": "Environnement et arborescence",
+      "duree": 15,
+      "fichier": "pytest.ini",
+      "bonus": false,
+      "etapes": [
+        "Créer l'environnement : `python -m venv .venv`, puis l'activer avec `.venv\\Scripts\\activate` (Windows).",
+        "Installer les outils : `pip install numpy matplotlib pytest`.",
+        "Créer `tests/`, `experiences/`, `figures/` et `journal.md` à la racine.",
+        "Créer `pytest.ini` à la racine avec deux lignes : `[pytest]` puis `pythonpath = src`. Les tests pourront alors écrire `from neurone import neurone_batch`."
+      ],
+      "test": "`python -m pytest` se lance sans erreur. « no tests ran » est normal à ce stade."
+    },
+    {
+      "id": "c2",
+      "titre": "Neurone : version boucle puis version vectorisée",
+      "duree": 15,
+      "fichier": "src/neurone.py",
+      "bonus": false,
+      "etapes": [
+        "`heaviside(z)` : 1 si $z \\ge 0$, 0 sinon. Doit marcher sur un nombre comme sur un tableau (`np.where`).",
+        "`neurone(x, w, b)` : un seul exemple, avec une **boucle explicite** sur les $d$ coordonnées, sans `@`.",
+        "`neurone_batch(X, w, b)` : les $n$ exemples d'un coup avec `X @ w + b`."
+      ],
+      "test": "`tests/test_neurone.py` : sur un `X` aléatoire de forme `(50, 3)` tiré avec `np.random.default_rng(0)`, `neurone_batch` et une boucle sur `neurone` donnent le même résultat (`np.array_equal`), et la sortie a la forme `(50,)`."
+    },
+    {
+      "id": "c3",
+      "titre": "Perceptron sur ET et OU",
+      "duree": 20,
+      "fichier": "src/perceptron.py",
+      "bonus": false,
+      "etapes": [
+        "`entrainer_perceptron(X, y, eta, n_epoques)` part de $w = 0$ et $b = 0$, et renvoie `w`, `b` et la liste `erreurs` (nombre d'erreurs à chaque époque).",
+        "Arrêter les époques dès qu'une époque se termine sans erreur.",
+        "Données : `X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])`, `y_et = np.array([0, 0, 0, 1])`, `y_ou = np.array([0, 1, 1, 1])`."
+      ],
+      "test": "`tests/test_perceptron.py` : `erreurs[-1] == 0` pour ET et pour OU, et `neurone_batch(X, w, b)` redonne exactement `y`."
+    },
+    {
+      "id": "c4",
+      "titre": "XOR et frontières de décision",
+      "duree": 15,
+      "fichier": "experiences/s1_frontieres.py",
+      "bonus": false,
+      "etapes": [
+        "Lancer le perceptron sur XOR (`y = np.array([0, 1, 1, 0])`) pendant 100 époques : le nombre d'erreurs ne tombe jamais à 0.",
+        "Écrire ce constat comme un test, `test_xor_echoue` : `min(erreurs) > 0`. Un test peut documenter un échec attendu.",
+        "Tracer côte à côte les frontières pour ET, OU et XOR : grille `np.meshgrid` sur $[-0{,}5 ; 1{,}5]^2$, `plt.contourf` de `neurone_batch` sur la grille, puis les 4 points colorés selon leur classe.",
+        "Enregistrer la figure dans `figures/s1_frontieres.png`."
+      ],
+      "test": "`test_xor_echoue` passe dans `tests/test_perceptron.py`, et la figure montre une droite qui sépare ET et OU, mais pas XOR."
+    },
+    {
+      "id": "c5",
+      "titre": "Le pas $\\eta$ sert-il à quelque chose ?",
+      "duree": 10,
+      "fichier": null,
+      "bonus": true,
+      "etapes": [
+        "Relancer ET avec $\\eta \\in \\{0{,}01 ; 0{,}1 ; 1 ; 10\\}$ et comparer les listes `erreurs`.",
+        "Elles sont identiques. Pourquoi ? Indice : en partant de $w = 0$ et $b = 0$, comment $(w, b)$ dépend-il de $\\eta$ après chaque correction ?",
+        "Noter l'explication en ligne *étonnement* du journal."
+      ],
+      "test": "",
+      "solution": "Par récurrence, $(w, b)$ obtenu avec le pas $\\eta$ vaut $\\eta$ fois celui obtenu avec le pas 1. Multiplier par $\\eta > 0$ ne change pas le signe de $w \\cdot x + b$, donc ni les prédictions, ni les corrections. Avec l'échelon, $\\eta$ ne sert à rien si on part de 0. Ce ne sera plus vrai en S2 avec la sigmoïde."
+    }
+  ],
+
+  "plan_b": [
+    "Si l'installation déborde : coder sans venv (`pip install --user numpy matplotlib pytest`) et créer le venv à la maison.",
+    "Si on a plus de 15 min de retard à 1:20 : la figure (fin de la tâche 4) passe à la maison. Le test `test_xor_echoue` reste en séance.",
+    "Le bonus sur $\\eta$ saute sans regret.",
+    "Ne jamais sauter un test pour gagner du temps : les tests sont la mémoire du projet."
+  ],
+
+  "livrables": [
+    "`src/neurone.py` et `src/perceptron.py`, avec `python -m pytest` entièrement vert",
+    "`figures/s1_frontieres.png`",
+    "Première entrée dans `journal.md`",
+    "Fiche-équations A5 n°1",
+    "Commit « S1 » poussé sur `main`"
+  ],
+
+  "questions_jury": [
+    {
+      "question": "Pourquoi un perceptron seul ne peut-il pas calculer XOR ?",
+      "piste": "Les 4 points donnent 4 inégalités contradictoires (notion 4). C'est une limite de représentation, pas d'apprentissage."
+    },
+    {
+      "question": "L'algorithme du perceptron converge-t-il toujours ?",
+      "piste": "Oui si les données sont séparables avec une marge $\\gamma$ : au plus $(R/\\gamma)^2$ corrections (Novikoff). Sinon il oscille indéfiniment."
+    },
+    {
+      "question": "À quoi sert le biais $b$ ?",
+      "piste": "Sans biais, l'hyperplan passe par l'origine. Exemple : ET devient impossible, car $(0, 0)$ est toujours classé 1."
+    },
+    {
+      "question": "Pourquoi vectoriser avec NumPy plutôt qu'écrire des boucles ?",
+      "piste": "Une boucle Python interprète chaque opération une par une. `X @ w` confie tout le calcul à du code compilé et optimisé. On le mesurera quand on chronométrera nos briques."
+    }
+  ],
+
+  "ancrage": {
+    "phrase": "Un neurone = un hyperplan.",
+    "fiche": "Fiche A5 n°1 : l'équation du neurone, la règle du perceptron, le dessin de l'hyperplan avec $w$ normal, et le piège du biais oublié."
+  },
+
+  "etonnement": "si rien ne vous a surpris, le résultat du bonus sur $\\eta$ est un bon candidat.",
+
+  "suite": {
+    "id": "S02",
+    "titre": "Apprendre par descente de gradient",
+    "a_relire": "La veille : la fiche n°1 et la ligne « première action » du journal. Pour prendre de l'avance : dériver $\\sigma(z) = 1 / (1 + e^{-z})$."
+  }
+}

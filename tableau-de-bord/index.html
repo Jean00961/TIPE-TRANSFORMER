@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fiches de séance TIPE</title>
+  <meta name="description" content="Tableau de bord des séances du TIPE : déroulé, tâches restantes et notions théoriques.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <div class="barre-interne">
+      <a class="marque" href="./">TIPE · Fiches de séance</a>
+      <nav class="sections" aria-label="Sections">
+        <a href="#deroule">Déroulé</a>
+        <a href="#theorie">Théorie</a>
+        <a href="#taches">Code</a>
+        <a href="#cloture">Clôture</a>
+      </nav>
+      <div class="barre-droite">
+        <span id="mini-chrono" class="mini-chrono" hidden></span>
+        <label class="interrupteur" title="Masque la théorie pour se tester avant de la relire">
+          <input type="checkbox" id="mode-rappel">
+          <span>Mode rappel</span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav id="frise" class="frise" aria-label="Les 14 séances"></nav>
+    <main id="contenu">
+      <p class="chargement">Chargement de la fiche…</p>
+    </main>
+  </div>
+</body>
+</html>

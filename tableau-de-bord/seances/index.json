@@ -1,0 +1,26 @@
+{
+  "binome": ["Jean", "Binôme"],
+  "seance_courante": "S01",
+  "phases": [
+    { "numero": 1, "titre": "Fondations", "jalon": "MLP ≥ 95 % en test, gradients vérifiés" },
+    { "numero": 2, "titre": "Optimisation du MLP", "jalon": "Problématique v1, banc d'essai reproductible" },
+    { "numero": 3, "titre": "Transformer", "jalon": "100 % des gradients vérifiés, texte généré" },
+    { "numero": 4, "titre": "Expériences et oral", "jalon": "Figures finales, diaporama, DOT" }
+  ],
+  "seances": [
+    { "id": "S01", "numero": 1, "titre": "Le neurone et le perceptron", "phase": 1, "statut": "prochaine", "bloquante": false, "fiche": true },
+    { "id": "S02", "numero": 2, "titre": "Apprendre par descente de gradient", "phase": 1, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S03", "numero": 3, "titre": "MLP et rétropropagation manuelle", "phase": 1, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S04", "numero": 4, "titre": "Classification multiclasse sur données réelles", "phase": 1, "statut": "a_venir", "bloquante": true, "fiche": false },
+    { "id": "S05", "numero": 5, "titre": "Premier élagage et pistes de problématique", "phase": 2, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S06", "numero": 6, "titre": "Élagage itératif et structuré", "phase": 2, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S07", "numero": 7, "titre": "Protocole expérimental et problématique v1", "phase": 2, "statut": "a_venir", "bloquante": true, "fiche": false },
+    { "id": "S08", "numero": 8, "titre": "Embeddings et self-attention", "phase": 3, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S09", "numero": 9, "titre": "Multi-head, bloc et modèle complet (forward)", "phase": 3, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S10", "numero": 10, "titre": "Rétropropagation du Transformer", "phase": 3, "statut": "a_venir", "bloquante": true, "fiche": false },
+    { "id": "S11", "numero": 11, "titre": "Entraînement du mini-GPT et problématique finale", "phase": 3, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S12", "numero": 12, "titre": "Élagage du Transformer", "phase": 4, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S13", "numero": 13, "titre": "Campagne finale et analyse", "phase": 4, "statut": "a_venir", "bloquante": false, "fiche": false },
+    { "id": "S14", "numero": 14, "titre": "Mise en forme pour le jury", "phase": 4, "statut": "a_venir", "bloquante": false, "fiche": false }
+  ]
+}
