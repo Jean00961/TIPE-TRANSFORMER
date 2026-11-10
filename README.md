@@ -1,115 +1,136 @@
 # TIPE-TRANSFORMER
 
-Implémentation pas à pas d'un Transformer en Python, avec NumPy uniquement, dans le cadre d'un TIPE (classe de MP). L'objectif est de comprendre et de pouvoir expliquer chaque opération du réseau, pas de reproduire un modèle performant.
+Optimisation des réseaux de neurones : implémentation « from scratch » d'un MLP puis d'un Transformer en Python avec NumPy uniquement, rétropropagation écrite à la main, et étude expérimentale de l'élagage (pruning). Projet de TIPE en binôme, classe de MP.
 
-## Le projet de TIPE
+L'objectif n'est pas d'obtenir un modèle performant, mais de comprendre, de savoir justifier chaque opération et de mesurer ce que l'on peut retirer à un réseau sans dégrader ses performances.
 
-### Contexte
+Le déroulé séance par séance est dans [docs/PLAN_DE_TRAVAIL.md](docs/PLAN_DE_TRAVAIL.md).
 
-Les Transformers sont à la base des modèles de langage actuels (GPT et dérivés). Leur élément central est le mécanisme d'attention, qui permet à chaque position d'une séquence de pondérer l'information venant de toutes les autres positions. Le projet s'inscrit dans un thème d'efficacité et d'optimisation : comprendre ce que coûte ce mécanisme et comment il se comporte.
+## Le projet
 
 ### Objectifs
 
-1. **Comprendre** : reconstruire les opérations d'un Transformer à partir des équations, sans bibliothèque spécialisée, et savoir les expliquer et les justifier.
-2. **Implémenter** : écrire en NumPy un petit modèle fonctionnel (forward pass, puis entraînement).
-3. **Étudier expérimentalement** : mesurer le comportement du modèle et le confronter aux prédictions théoriques. C'est cette partie qui constitue l'apport scientifique du TIPE, au-delà de la simple reproduction d'un code existant.
+1. **Comprendre** : reconstruire chaque opération à partir des équations, forward et backward, sans bibliothèque de haut niveau.
+2. **Implémenter** : un MLP entraîné sur des chiffres manuscrits, puis un mini-GPT entraîné sur un petit corpus de texte français.
+3. **Optimiser et mesurer** : élaguer les deux réseaux et confronter les mesures (précision, nombre de paramètres, temps d'inférence) aux prédictions théoriques. Cette partie expérimentale constitue l'apport personnel du TIPE.
+
+### Démarche en quatre phases
+
+| Phase | Séances | Contenu | Jalon de sortie |
+| --- | --- | --- | --- |
+| 1. Fondations | S1–S4 | Neurone, perceptron, descente de gradient, MLP, rétropropagation, softmax | MLP ≥ 95 % de précision en test, gradients vérifiés numériquement |
+| 2. Optimisation du MLP | S5–S7 | Élagage par magnitude, itératif, structuré ; protocole expérimental | Problématique v1, banc d'essai reproductible |
+| 3. Transformer | S8–S11 | Embeddings, self-attention, multi-head, bloc, backward, entraînement | Tous les gradients vérifiés, texte généré |
+| 4. Expériences et oral | S12–S14 | Élagage des têtes d'attention et des MLP, analyse, mise en forme | Figures finales, diaporama, DOT |
+
+Chaque brique est écrite puis testée séparément avant de passer à la suivante, avec des dimensions minuscules au départ. Chaque gradient écrit à la main est comparé à un gradient calculé par différences finies.
 
 ### Modèle mathématique
 
-Pour une séquence de `T` vecteurs `X` de dimension `d_model` :
+**MLP.** Pour une couche linéaire `Z = XW + b`, avec `X` de taille `(n, d_in)` et le gradient amont `G = ∂L/∂Z` :
+
+- `∂L/∂W = Xᵀ G`, `∂L/∂b = somme des lignes de G`, `∂L/∂X = G Wᵀ`
+- Softmax suivie de l'entropie croisée : `∂L/∂Z = (P − Y) / n`
+
+**Élagage.** On applique un masque binaire `M` aux poids, `W ← W ⊙ M`, et aussi au gradient pendant le réentraînement :
+
+- non structuré : on retire les poids de plus petite valeur absolue (même nombre d'opérations, mais moins de paramètres non nuls) ;
+- structuré : on retire des neurones entiers ou des têtes d'attention entières (les matrices rétrécissent, donc le calcul aussi).
+
+**Transformer.** Pour une séquence de `T` vecteurs `X` de dimension `d_model` :
 
 - Projections : `Q = X Wq`, `K = X Wk`, `V = X Wv`
-- Matrice d'attention : `A = softmax(Q K^T / sqrt(dk))`, de dimension `T x T`
-- Sortie : `Y = A V`
-- Multi-head : `h` têtes de dimension `dk = d_model / h`, concaténées puis projetées
+- Attention : `A = softmax(Q Kᵀ / √dk)`, de taille `T × T`, puis `Y = A V`
+- Multi-head : `h` têtes de dimension `dk = d_model / h`, concaténées puis projetées par `Wo`
 - MLP appliqué à chaque position : `W2 ReLU(W1 x + b1) + b2`
-- Bloc : attention, connexion résiduelle, LayerNorm, MLP, connexion résiduelle, LayerNorm
-- Pour un décodeur de type GPT : masque causal empêchant de regarder les positions futures
-
-### Démarche
-
-1. Représentation des données : tokenisation par caractères, puis matrice d'embedding `|V| x d_model`.
-2. Self-attention, testée sur des entrées simples (chaque ligne de `A` somme à 1, effet de la modification d'une entrée sur les sorties).
-3. Multi-head attention, avec une boucle sur les têtes dans un premier temps.
-4. MLP, bloc Transformer, puis modèle complet produisant une distribution de probabilité sur le vocabulaire.
-5. Entraînement : cross-entropy, rétropropagation, optimiseur. Cette étape est traitée à part, car elle représente un chantier distinct de la construction du modèle.
-6. Expériences et analyse des résultats.
-
-On part de dimensions minuscules (`d_model = 8`, 2 têtes de dimension 4) avant d'envisager des tailles plus grandes. Le Transformer original utilise `d_model = 512`, 8 têtes et 6 blocs encodeur et décodeur.
+- Bloc : attention et MLP, chacun avec connexion résiduelle et LayerNorm. On choisira entre la variante post-norm de l'article original et la variante pre-norm de GPT-2, en justifiant le choix.
+- Décodeur de type GPT : masque causal qui empêche chaque position de regarder les positions futures
+- Nombre de paramètres ≈ `12 · L · d_model² + |V| · d_model` pour `L` blocs
 
 ### Problématique et axes d'étude
 
-La problématique précise reste à fixer. Le fil conducteur envisagé est le coût de l'attention : pour une séquence de longueur `T`, la matrice `QK^T` est de taille `T x T`, donc le coût de calcul et de mémoire croît quadratiquement avec `T`. Axes d'étude :
+La problématique sera fixée à partir de la séance 5, une fois les premières mesures d'élagage obtenues. Elle sera ensuite affinée en S7 (version pour la MCOT), puis en S11 (version finale). Pistes envisagées :
 
-- Mesurer le temps d'exécution de l'attention en fonction de `T` et le comparer à la prédiction en `O(T^2)`.
-- Étudier le rôle de la normalisation par `sqrt(dk)` (stabilité du softmax).
-- Étudier l'effet du nombre de têtes.
-- Étudier l'effet de l'encodage positionnel.
-- Observer comment la matrice d'attention évolue quand on modifie les entrées.
+- Quelle proportion des poids d'un réseau peut-on retirer sans dégrader ses performances, et quel critère d'élagage est le plus efficace ?
+- L'élagage réduit-il réellement le coût de calcul, ou seulement le nombre de paramètres ?
+- Toutes les têtes d'attention d'un Transformer sont-elles utiles ?
+- Le coût de l'attention croît-il bien en `O(T²)` avec la longueur de séquence ?
+- Quel est le rôle de la normalisation par `√dk` dans la stabilité de l'entraînement ?
 
 ### Limites assumées
 
-Le but n'est pas de produire un modèle conversationnel performant. Un modèle capable de générer des caractères ressemblant au texte d'entraînement est déjà un résultat suffisant pour mener ces expériences.
+Les modèles restent petits et tournent sur CPU. Un MLP qui reconnaît les chiffres 8×8 et un mini-GPT qui génère des caractères ressemblant au texte d'entraînement suffisent pour mener les expériences.
 
 ### Organisation
 
-Le travail est mené à deux, avec une répartition entre données et architecture d'une part, mécanismes neuronaux d'autre part. L'intégration se fait ensemble et chacun doit pouvoir expliquer l'ensemble du code au jury.
-
-## Approche
-
-On commence par un petit GPT (blocs décodeurs, attention causale) inspiré de la vidéo de Karpathy [Let's build GPT](https://www.youtube.com/watch?v=kCc8FmEb1nY), réécrit en NumPy. On pourra ensuite revenir à l'architecture encodeur-décodeur de *Attention Is All You Need* (2017).
-
-Chaque brique est écrite et testée séparément avant de passer à la suivante, avec des dimensions volontairement minuscules (par exemple `d_model = 8`).
+Le travail est mené à deux. Hors séance, l'un s'occupe plutôt des données et de l'architecture, l'autre plutôt des mécanismes neuronaux. En séance, les rôles de pilote et de copilote alternent, et chacun doit pouvoir expliquer l'ensemble du code au jury. Un journal de bord (`journal.md`) garde la trace de chaque séance et servira à rédiger le DOT.
 
 ## Structure
 
 ```
 TIPE-TRANSFORMER/
 ├── src/
-│   ├── data.py          # tokenisation par caractères (fait)
-│   ├── attention.py     # self-attention, multi-head (à venir)
-│   ├── mlp.py           # réseau feed-forward (à venir)
-│   └── transformer.py   # bloc et modèle complet (à venir)
+│   ├── data.py            # tokenisation par caractères (fait)
+│   ├── neurone.py         # neurone et perceptron (S1, à venir)
+│   ├── verif_gradient.py  # gradient par différences finies (S2, à venir)
+│   ├── couches.py         # Lineaire, ReLU, softmax + cross-entropy (S3–S4, à venir)
+│   ├── mlp.py             # MLP et boucle d'entraînement (S3–S4, à venir)
+│   ├── elagage.py         # masques, élagage non structuré et structuré (S5–S6, à venir)
+│   ├── attention.py       # self-attention, multi-head (S8–S9, à venir)
+│   ├── transformer.py     # bloc et mini-GPT (S9–S11, à venir)
+│   └── optimiseurs.py     # SGD, Adam (S11, à venir)
+├── tests/                 # un fichier de tests par brique
+├── experiences/           # banc d'essai et résultats CSV
+├── figures/
 ├── notebooks/
-│   └── experiments.ipynb  # expériences et mesures (à venir)
+│   └── experiments.ipynb
 ├── docs/
 │   └── PLAN_DE_TRAVAIL.md # plan détaillé des 14 séances
+├── journal.md             # journal de bord des séances (à venir)
 ├── CLAUDE.md
-├── README.md
-└── .gitignore
+└── README.md
 ```
 
 ## Avancement
 
+**Phase 1 : Fondations**
+- [ ] Neurone vectorisé et perceptron (ET, OU, échec sur XOR)
+- [ ] Régression logistique et vérification numérique des gradients
+- [ ] Couches `Lineaire` et `ReLU` avec backward, MLP qui résout XOR
+- [ ] Softmax, cross-entropy, mini-batch : MLP de référence ≥ 95 % sur les chiffres 8×8
+
+**Phase 2 : Optimisation du MLP**
+- [ ] Élagage par magnitude en une fois : courbe précision / taux d'élagage
+- [ ] Élagage itératif avec réentraînement, élagage structuré, mesure du temps
+- [ ] Banc d'essai reproductible (graines, CSV) et problématique v1
+
+**Phase 3 : Transformer**
 - [x] Tokenisation par caractères (`stoi`, `itos`, `encoder`, `decoder`)
-- [ ] Matrice d'embedding `|V| x d_model`
-- [ ] Self-attention : `Q = XWq`, `K = XWk`, `V = XWv`, `A = softmax(QK^T / sqrt(dk))`, `Y = AV`
-- [ ] Multi-head attention
-- [ ] MLP : `W2 ReLU(W1 x + b1) + b2`
-- [ ] Encodage positionnel, connexions résiduelles, LayerNorm
-- [ ] Masque causal et modèle complet
-- [ ] Entraînement (fonction de coût, gradients, optimiseur)
+- [ ] Embedding et self-attention avec masque causal
+- [ ] Multi-head, LayerNorm, bloc et mini-GPT (forward)
+- [ ] Backward de toutes les briques, vérifié par différences finies
+- [ ] Entraînement avec Adam et génération de texte
+
+**Phase 4 : Expériences et oral**
+- [ ] Élagage des têtes d'attention et des MLP du Transformer
+- [ ] Campagne d'expériences finale et analyse
+- [ ] Diaporama et DOT
 
 ## Utilisation
 
-Prérequis : Python 3 et NumPy.
+Prérequis : Python 3 et NumPy (matplotlib pour les figures, pytest pour les tests).
 
 ```
 python src/data.py
 ```
 
-Affiche le vocabulaire, les tokens de "bonjour le monde" et vérifie que le décodage redonne le texte d'origine.
-
-## Pistes d'étude expérimentale
-
-- Évolution de la matrice d'attention selon les entrées.
-- Effet du nombre de têtes.
-- Rôle de la normalisation par `sqrt(dk)`.
-- Effet de l'encodage positionnel.
-- Coût de calcul de l'attention en fonction de la longueur de séquence (théoriquement quadratique), comparé à des mesures de temps d'exécution.
+Affiche le vocabulaire et les tokens de « bonjour le monde », puis vérifie que le décodage redonne le texte d'origine.
 
 ## Références
 
-- Vaswani et al., *Attention Is All You Need*, 2017.
-- Andrej Karpathy, *Let's build GPT: from scratch, in code, spelled out*.
-- [karpathy/build-nanogpt](https://github.com/karpathy/build-nanogpt)
+- Vaswani et al., *Attention Is All You Need*, 2017 : [arXiv:1706.03762](https://arxiv.org/abs/1706.03762)
+- LeCun, Denker, Solla, *Optimal Brain Damage*, NeurIPS 1990
+- Han et al., *Learning both Weights and Connections for Efficient Neural Networks*, 2015 : [arXiv:1506.02626](https://arxiv.org/abs/1506.02626)
+- Frankle & Carbin, *The Lottery Ticket Hypothesis*, 2019 : [arXiv:1803.03635](https://arxiv.org/abs/1803.03635)
+- Michel, Levy, Neubig, *Are Sixteen Heads Really Better than One?*, 2019 : [arXiv:1905.10650](https://arxiv.org/abs/1905.10650)
+- Andrej Karpathy, [Let's build GPT: from scratch, in code, spelled out](https://www.youtube.com/watch?v=kCc8FmEb1nY) et [karpathy/build-nanogpt](https://github.com/karpathy/build-nanogpt)
