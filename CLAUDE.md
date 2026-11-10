@@ -37,7 +37,13 @@ Les séances de TIPE ont lieu le **mardi**, en 2 h. Avant chacune, une fiche dé
 
 ### Préparer la fiche de la séance de demain (tâche du lundi soir)
 
-Cette tâche est lancée sans personne derrière l'écran par `outils/preparer_fiche.ps1`, programmé le lundi à 20 h via `outils/installer_tache.ps1`. Quand on demande de « préparer la fiche de la séance de demain », suivre ces étapes dans l'ordre :
+Cette tâche est lancée par une tâche planifiée de Claude, dans le cloud, tous les lundis à 20 h (heure de Paris). Personne n'est là pour répondre : ne poser aucune question, faire le choix le plus raisonnable et le signaler dans le résumé final. Dans cet environnement :
+
+- La commande Python peut s'appeler `python3`. Si `numpy` ou `pytest` manquent, les installer (`pip install numpy pytest matplotlib`). Si les tests ne peuvent quand même pas tourner, l'écrire dans `etat.alertes` au lieu de bloquer.
+- Pousser directement sur `main`, comme le veut la section Git : pas de branche `claude/…`, pas de pull request. Si le push sur `main` est refusé, le dire clairement dans le résumé final.
+- Les dates s'entendent en heure de Paris : « demain » est le mardi qui suit.
+
+Quand on demande de « préparer la fiche de la séance de demain », suivre ces étapes dans l'ordre :
 
 1. `git pull`, puis lire `tableau-de-bord/seances/index.json` pour trouver la dernière fiche écrite (`seance_courante`).
 2. **Établir où on en est réellement**, sans se fier au plan seul :

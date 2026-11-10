@@ -89,9 +89,6 @@ TIPE-TRANSFORMER/
 ├── tableau-de-bord/       # site des fiches de séance (déployé sur Vercel)
 │   ├── seances/           # index.json + une fiche SXX.json par séance
 │   └── verifier_fiches.py # vérifie les fiches avant un commit
-├── outils/
-│   ├── preparer_fiche.ps1 # fait écrire la fiche du mardi par Claude
-│   └── installer_tache.ps1# programme le script le lundi à 20 h
 ├── journal.md             # journal de bord des séances (à venir)
 ├── CLAUDE.md
 └── README.md
@@ -110,17 +107,9 @@ Chaque séance (le mardi, 2 h) a sa fiche sur **https://tipe-transformer.vercel.
 
 Les cases cochées et le chrono restent dans le navigateur de chacun. **La trace qui compte est `journal.md`** : c'est d'après lui que la fiche suivante est préparée.
 
-**Préparation automatique, le lundi soir :** `outils/preparer_fiche.ps1` lance Claude Code. Celui-ci lit le journal, les commits et le résultat des tests, puis écrit la fiche du mardi en adaptant le plan à l'état réel : reliquats en premier, rattrapage si une séance bloquante n'est pas validée. Il la vérifie, la pousse sur `main`, et Vercel la met en ligne. La procédure suivie est décrite dans `CLAUDE.md`, section « Fiches de séance ».
+**Préparation automatique, le lundi soir :** une tâche planifiée de Claude, lancée depuis l'interface de Claude, s'exécute dans le cloud tous les lundis à 20 h (heure de Paris). Elle clone le dépôt, lit le journal, les commits et le résultat des tests, puis écrit la fiche du mardi en adaptant le plan à l'état réel : reliquats en premier, rattrapage si une séance bloquante n'est pas validée. Elle vérifie la fiche, la pousse sur `main`, et Vercel la met en ligne. La procédure suivie est décrite dans `CLAUDE.md`, section « Fiches de séance ».
 
-```
-# Une seule fois, pour programmer la tâche tous les lundis à 20 h :
-powershell -ExecutionPolicy Bypass -File outils\installer_tache.ps1
-
-# Pour lancer la préparation à la main :
-powershell -ExecutionPolicy Bypass -File outils\preparer_fiche.ps1
-```
-
-Le compte rendu de chaque exécution est enregistré dans `outils/logs/`. Aperçu local du site : dans `tableau-de-bord/`, lancer `python -m http.server 8000`, puis ouvrir `http://localhost:8000`.
+Aperçu local du site : dans `tableau-de-bord/`, lancer `python -m http.server 8000`, puis ouvrir `http://localhost:8000`.
 
 ## Avancement
 
