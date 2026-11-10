@@ -15,7 +15,7 @@ Projet de TIPE (MP) : implémentation d'un Transformer en Python/NumPy, brique p
 - `src/` : code du modèle (`data.py`, `attention.py`, `mlp.py`, `transformer.py`).
 - `notebooks/` : expériences et mesures (`experiments.ipynb`).
 - `docs/PLAN_DE_TRAVAIL.md` : le plan des 14 séances (référence fixe).
-- `tableau-de-bord/` : le site des fiches de séance (voir plus bas).
+- `tableau-de-bord/` : le site des fiches de séance, en React + TypeScript (voir plus bas).
 - `journal.md` (créé en S1) : une entrée par séance, écrite à la clôture.
 - Lancer les scripts depuis la racine du dépôt, par exemple `python src/data.py`.
 
@@ -29,10 +29,11 @@ Projet de TIPE (MP) : implémentation d'un Transformer en Python/NumPy, brique p
 
 Les séances de TIPE ont lieu le **mardi**, en 2 h. Avant chacune, une fiche détaillée est écrite le lundi soir. Le site l'affiche avec le déroulé minuté, un chrono, les tâches à cocher, la théorie (formules KaTeX, mode rappel qui masque les notions) et un bloc de journal à copier.
 
-- Site statique sans build : `tableau-de-bord/index.html`, `app.js`, `style.css`. Il est déployé sur Vercel à chaque push sur `main` (projet Vercel `tipe-transformer`, dossier racine `tableau-de-bord`). Adresse : https://tipe-transformer.vercel.app (une séance précise : `?s=S01`).
-- Données : `tableau-de-bord/seances/index.json` (les 14 séances, leur statut, la séance courante) et un fichier `SXX.json` par fiche écrite. **On ne modifie que ces JSON** pour préparer une séance, jamais le HTML, le JS ou le CSS.
-- Vérification obligatoire avant tout commit de fiche : `python tableau-de-bord/verifier_fiches.py` doit afficher « Fiches valides ».
-- Aperçu local : dans `tableau-de-bord/`, lancer `python -m http.server 8000`, puis ouvrir `http://localhost:8000`.
+- Application React + TypeScript (Vite) dans `tableau-de-bord/` : code dans `src/` (`types.ts` décrit la forme des fiches, `composants/` l'affichage, `progression.ts` les calculs). Vercel la reconstruit à chaque push sur `main` (projet `tipe-transformer`, dossier racine `tableau-de-bord`, réglages dans `vercel.json`). Adresse : https://tipe-transformer.vercel.app (une séance précise : `?s=S01`).
+- Données : `tableau-de-bord/seances/index.json` (les 14 séances, leur statut, la séance courante) et un fichier `SXX.json` par fiche écrite. Elles sont intégrées au build. **On ne modifie que ces JSON** pour préparer une séance, jamais `src/` du site.
+- Si la forme d'une fiche change, mettre à jour ensemble `src/types.ts`, `verifier_fiches.py` et cette section.
+- Vérification obligatoire avant tout commit de fiche : `python tableau-de-bord/verifier_fiches.py` doit afficher « Fiches valides ». Si Node est disponible, lancer aussi dans `tableau-de-bord/` : `npm ci`, `npm run build` et `npm test`.
+- Aperçu local : dans `tableau-de-bord/`, `npm install` puis `npm run dev`. Sur un lecteur réseau comme `U:`, Vite échoue (chemin UNC) : travailler sur une copie du dossier sur `C:`.
 - Les cases cochées et le chrono restent dans le navigateur. La trace qui fait foi est `journal.md`.
 
 ### Préparer la fiche de la séance de demain (tâche du lundi soir)
@@ -65,7 +66,7 @@ Quand on demande de « préparer la fiche de la séance de demain », suivre ces
    - `taches` : les reliquats d'abord, puis les tâches du plan. Chaque tâche a des étapes concrètes (noms de fichiers et de fonctions en français) et le **test** à écrire. La somme des durées hors bonus ne doit pas dépasser le créneau Code. Si on est en retard, couper d'abord ce que le plan marque *bonus*.
    - `plan_b`, `livrables`, `questions_jury` (3 à 5, avec une piste de réponse), `ancrage`, `etonnement`, `suite` (la séance N+1 et ce qu'il faut relire la veille).
 6. Mettre à jour `index.json` : la séance précédente passe en `"faite"` si elle a eu lieu, N passe en `"prochaine"` avec `"fiche": true`, et `seance_courante` devient N.
-7. Lancer `python tableau-de-bord/verifier_fiches.py` et corriger jusqu'à « Fiches valides ».
+7. Lancer `python tableau-de-bord/verifier_fiches.py` et corriger jusqu'à « Fiches valides ». Si Node est disponible, lancer aussi `npm ci && npm run build && npm test` dans `tableau-de-bord/` : un échec bloquerait le déploiement Vercel.
 8. Commit « Fiche SNN (date) », puis push sur `origin main`. Vercel redéploie tout seul.
 9. Terminer par un résumé de 5 lignes : la séance préparée, l'état constaté, les reliquats, les alertes et le lien du site.
 

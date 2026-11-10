@@ -86,7 +86,8 @@ TIPE-TRANSFORMER/
 │   └── experiments.ipynb
 ├── docs/
 │   └── PLAN_DE_TRAVAIL.md # plan détaillé des 14 séances
-├── tableau-de-bord/       # site des fiches de séance (déployé sur Vercel)
+├── tableau-de-bord/       # site des fiches de séance, React + TypeScript (Vercel)
+│   ├── src/               # composants, types des fiches, calculs de progression
 │   ├── seances/           # index.json + une fiche SXX.json par séance
 │   └── verifier_fiches.py # vérifie les fiches avant un commit
 ├── journal.md             # journal de bord des séances (à venir)
@@ -109,7 +110,16 @@ Les cases cochées et le chrono restent dans le navigateur de chacun. **La trace
 
 **Préparation automatique, le lundi soir :** une tâche planifiée de Claude, lancée depuis l'interface de Claude, s'exécute dans le cloud tous les lundis à 20 h (heure de Paris). Elle clone le dépôt, lit le journal, les commits et le résultat des tests, puis écrit la fiche du mardi en adaptant le plan à l'état réel : reliquats en premier, rattrapage si une séance bloquante n'est pas validée. Elle vérifie la fiche, la pousse sur `main`, et Vercel la met en ligne. La procédure suivie est décrite dans `CLAUDE.md`, section « Fiches de séance ».
 
-Aperçu local du site : dans `tableau-de-bord/`, lancer `python -m http.server 8000`, puis ouvrir `http://localhost:8000`.
+Le site est une application React + TypeScript construite avec Vite. Pour le lancer en local (Node 18 ou plus) :
+
+```
+cd tableau-de-bord
+npm install
+npm run dev      # aperçu sur http://localhost:5173
+npm test         # tests du découpage du texte et des calculs de progression
+```
+
+Sur un lecteur réseau comme `U:`, Vite ne trouve pas les fichiers (chemin réseau) : copier le dossier sur `C:` pour le lancer.
 
 ## Avancement
 

@@ -2,3 +2,5 @@
 *.pyc
 .ipynb_checkpoints/
 .venv/
+node_modules/
+dist/

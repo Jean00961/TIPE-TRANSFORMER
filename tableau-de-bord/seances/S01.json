@@ -5,7 +5,7 @@
   "date": "2026-11-17",
   "phase": 1,
   "pilote": "Jean",
-  "copilote": "Binôme",
+  "copilote": "Martin",
   "genere_le": "2026-11-10",
   "objectif": "Écrire et tester un neurone vectorisé et un perceptron qui apprend ET et OU, puis constater qu'il échoue sur XOR.",
 

@@ -1,5 +1,5 @@
 {
-  "binome": ["Jean", "Binôme"],
+  "binome": ["Jean", "Martin"],
   "seance_courante": "S01",
   "phases": [
     { "numero": 1, "titre": "Fondations", "jalon": "MLP ≥ 95 % en test, gradients vérifiés" },
