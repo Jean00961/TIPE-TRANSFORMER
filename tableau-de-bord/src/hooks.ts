@@ -35,6 +35,38 @@ export function useHorloge(intervalleMs: number): number {
   return maintenant;
 }
 
+/**
+ * Catégorie affichée, lue dans l'ancre de l'adresse (#theorie). Une ancre inconnue
+ * ou absente donne la première catégorie. Le bouton « retour » du navigateur suit.
+ */
+export function useCategorieDansAdresse(ids: readonly string[]) {
+  const lire = () => {
+    const ancre = decodeURIComponent(window.location.hash.slice(1));
+    return ids.includes(ancre) ? ancre : (ids[0] ?? "");
+  };
+  const [active, setActive] = useState<string>(lire);
+
+  useEffect(() => {
+    const surChangement = () => setActive(lire());
+    window.addEventListener("popstate", surChangement);
+    window.addEventListener("hashchange", surChangement);
+    return () => {
+      window.removeEventListener("popstate", surChangement);
+      window.removeEventListener("hashchange", surChangement);
+    };
+  }, [ids.join(",")]);
+
+  const aller = useCallback((id: string) => {
+    if (window.location.hash !== `#${id}`) {
+      window.history.pushState(null, "", `${window.location.search}#${id}`);
+    }
+    setActive(id);
+    window.scrollTo({ top: 0 });
+  }, []);
+
+  return [active, aller] as const;
+}
+
 /** Séance demandée dans l'adresse (?s=S01), synchronisée avec l'historique du navigateur. */
 export function useSeanceDansAdresse() {
   const lire = () => new URLSearchParams(window.location.search).get("s");

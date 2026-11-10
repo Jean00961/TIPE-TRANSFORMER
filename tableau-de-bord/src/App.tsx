@@ -9,7 +9,7 @@ export function App() {
 
   if (!fiche) {
     return (
-      <main className="page">
+      <main className="contenu">
         <p className="carte">Aucune fiche de séance n'est encore écrite.</p>
       </main>
     );

@@ -97,14 +97,14 @@ TIPE-TRANSFORMER/
 
 ## Séances et fiches de séance
 
-Chaque séance (le mardi, 2 h) a sa fiche sur **https://tipe-transformer.vercel.app**. Le site s'ouvre sur la prochaine séance ; les autres sont accessibles depuis la frise en haut de page.
+Chaque séance (le mardi, 2 h) a sa fiche sur **https://tipe-transformer.vercel.app**. Le site s'ouvre sur la prochaine séance. Le menu de gauche (bouton ☰ sur téléphone) donne les catégories de la fiche (vue d'ensemble, déroulé, rappel actif, théorie, code, livrables, questions de jury, clôture), affichées une à la fois, puis la liste des 14 séances.
 
 **Pendant la séance :**
 
-1. Ouvrir la fiche et cliquer sur « Démarrer la séance ». Le chrono suit le déroulé (rappel actif, relance, théorie, code, explication croisée, clôture) et met en avant le créneau en cours.
-2. Rappel actif : répondre de tête, puis découvrir les réponses. Le « Mode rappel » de la barre du haut masque aussi la théorie, pour se tester avant de la relire.
+1. Ouvrir la fiche et cliquer sur « Démarrer la séance » (en haut du menu). Le chrono suit le déroulé (rappel actif, relance, théorie, code, explication croisée, clôture) et met en avant le créneau en cours.
+2. Rappel actif : répondre de tête, puis découvrir les réponses. Le « Mode rappel », en tête de la catégorie Théorie, masque aussi les notions, pour se tester avant de la relire.
 3. Cocher les tâches au fur et à mesure. Le panneau « Reste à coder » indique le temps restant et signale un retard de plus de 10 min (voir alors « Si on prend du retard »).
-4. Clôture : compléter le bloc de journal en bas de page (il est pré-rempli avec les tâches cochées), le coller dans `journal.md`, puis commit et push.
+4. Clôture : dans la catégorie « Clôture et journal », compléter le bloc de journal (il est pré-rempli avec les tâches cochées), le coller dans `journal.md`, puis commit et push.
 
 Les cases cochées et le chrono restent dans le navigateur de chacun. **La trace qui compte est `journal.md`** : c'est d'après lui que la fiche suivante est préparée.
 

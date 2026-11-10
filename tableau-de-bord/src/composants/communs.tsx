@@ -1,27 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Blocs, EnLigne } from "../texte/Texte";
-
-export function Section({
-  id,
-  titre,
-  precision,
-  children,
-}: {
-  id: string;
-  titre: string;
-  precision?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section id={id} className="section">
-      <h2 className="section__titre">
-        {titre}
-        {precision && <span className="discret">{precision}</span>}
-      </h2>
-      {children}
-    </section>
-  );
-}
 
 /** Liste à puces simple dans une carte. */
 export function ListeTexte({ items, className }: { items: string[]; className?: string }) {
