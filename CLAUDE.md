@@ -37,7 +37,7 @@ Les séances de TIPE ont lieu le **mardi**, en 2 h. Avant chacune, une fiche dé
 
 ### Préparer la fiche de la séance de demain (tâche du lundi soir)
 
-Quand on demande de « préparer la fiche de la séance de demain », suivre ces étapes dans l'ordre :
+Cette tâche est lancée sans personne derrière l'écran par `outils/preparer_fiche.ps1`, programmé le lundi à 20 h via `outils/installer_tache.ps1`. Quand on demande de « préparer la fiche de la séance de demain », suivre ces étapes dans l'ordre :
 
 1. `git pull`, puis lire `tableau-de-bord/seances/index.json` pour trouver la dernière fiche écrite (`seance_courante`).
 2. **Établir où on en est réellement**, sans se fier au plan seul :

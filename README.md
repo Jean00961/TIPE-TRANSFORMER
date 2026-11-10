@@ -86,10 +86,41 @@ TIPE-TRANSFORMER/
 │   └── experiments.ipynb
 ├── docs/
 │   └── PLAN_DE_TRAVAIL.md # plan détaillé des 14 séances
+├── tableau-de-bord/       # site des fiches de séance (déployé sur Vercel)
+│   ├── seances/           # index.json + une fiche SXX.json par séance
+│   └── verifier_fiches.py # vérifie les fiches avant un commit
+├── outils/
+│   ├── preparer_fiche.ps1 # fait écrire la fiche du mardi par Claude
+│   └── installer_tache.ps1# programme le script le lundi à 20 h
 ├── journal.md             # journal de bord des séances (à venir)
 ├── CLAUDE.md
 └── README.md
 ```
+
+## Séances et fiches de séance
+
+Chaque séance (le mardi, 2 h) a sa fiche sur **https://tipe-transformer.vercel.app**. Le site s'ouvre sur la prochaine séance ; les autres sont accessibles depuis la frise en haut de page.
+
+**Pendant la séance :**
+
+1. Ouvrir la fiche et cliquer sur « Démarrer la séance ». Le chrono suit le déroulé (rappel actif, relance, théorie, code, explication croisée, clôture) et met en avant le créneau en cours.
+2. Rappel actif : répondre de tête, puis découvrir les réponses. Le « Mode rappel » de la barre du haut masque aussi la théorie, pour se tester avant de la relire.
+3. Cocher les tâches au fur et à mesure. Le panneau « Reste à coder » indique le temps restant et signale un retard de plus de 10 min (voir alors « Si on prend du retard »).
+4. Clôture : compléter le bloc de journal en bas de page (il est pré-rempli avec les tâches cochées), le coller dans `journal.md`, puis commit et push.
+
+Les cases cochées et le chrono restent dans le navigateur de chacun. **La trace qui compte est `journal.md`** : c'est d'après lui que la fiche suivante est préparée.
+
+**Préparation automatique, le lundi soir :** `outils/preparer_fiche.ps1` lance Claude Code. Celui-ci lit le journal, les commits et le résultat des tests, puis écrit la fiche du mardi en adaptant le plan à l'état réel : reliquats en premier, rattrapage si une séance bloquante n'est pas validée. Il la vérifie, la pousse sur `main`, et Vercel la met en ligne. La procédure suivie est décrite dans `CLAUDE.md`, section « Fiches de séance ».
+
+```
+# Une seule fois, pour programmer la tâche tous les lundis à 20 h :
+powershell -ExecutionPolicy Bypass -File outils\installer_tache.ps1
+
+# Pour lancer la préparation à la main :
+powershell -ExecutionPolicy Bypass -File outils\preparer_fiche.ps1
+```
+
+Le compte rendu de chaque exécution est enregistré dans `outils/logs/`. Aperçu local du site : dans `tableau-de-bord/`, lancer `python -m http.server 8000`, puis ouvrir `http://localhost:8000`.
 
 ## Avancement
 
