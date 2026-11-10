@@ -65,11 +65,18 @@ Chaque brique est écrite et testée séparément avant de passer à la suivante
 
 ```
 TIPE-TRANSFORMER/
-├── data.py          # tokenisation par caractères (fait)
-├── attention.py     # self-attention, multi-head (à venir)
-├── mlp.py           # réseau feed-forward (à venir)
-├── transformer.py   # bloc et modèle complet (à venir)
-└── experiments.ipynb  # expériences et mesures (à venir)
+├── src/
+│   ├── data.py          # tokenisation par caractères (fait)
+│   ├── attention.py     # self-attention, multi-head (à venir)
+│   ├── mlp.py           # réseau feed-forward (à venir)
+│   └── transformer.py   # bloc et modèle complet (à venir)
+├── notebooks/
+│   └── experiments.ipynb  # expériences et mesures (à venir)
+├── docs/
+│   └── PLAN_DE_TRAVAIL.md # plan détaillé des 14 séances
+├── CLAUDE.md
+├── README.md
+└── .gitignore
 ```
 
 ## Avancement
@@ -88,7 +95,7 @@ TIPE-TRANSFORMER/
 Prérequis : Python 3 et NumPy.
 
 ```
-python data.py
+python src/data.py
 ```
 
 Affiche le vocabulaire, les tokens de "bonjour le monde" et vérifie que le décodage redonne le texte d'origine.
