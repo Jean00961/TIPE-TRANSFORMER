@@ -29,7 +29,7 @@ Projet de TIPE (MP) : implémentation d'un Transformer en Python/NumPy, brique p
 
 Les séances de TIPE ont lieu le **mardi**, en 2 h. Avant chacune, une fiche détaillée est écrite le lundi soir. Le site l'affiche avec le déroulé minuté, un chrono, les tâches à cocher, la théorie (formules KaTeX, mode rappel qui masque les notions) et un bloc de journal à copier.
 
-- Site statique sans build : `tableau-de-bord/index.html`, `app.js`, `style.css`. Il est déployé sur Vercel à chaque push sur `main` (dossier racine du projet Vercel : `tableau-de-bord`).
+- Site statique sans build : `tableau-de-bord/index.html`, `app.js`, `style.css`. Il est déployé sur Vercel à chaque push sur `main` (projet Vercel `tipe-transformer`, dossier racine `tableau-de-bord`). Adresse : https://tipe-transformer.vercel.app (une séance précise : `?s=S01`).
 - Données : `tableau-de-bord/seances/index.json` (les 14 séances, leur statut, la séance courante) et un fichier `SXX.json` par fiche écrite. **On ne modifie que ces JSON** pour préparer une séance, jamais le HTML, le JS ou le CSS.
 - Vérification obligatoire avant tout commit de fiche : `python tableau-de-bord/verifier_fiches.py` doit afficher « Fiches valides ».
 - Aperçu local : dans `tableau-de-bord/`, lancer `python -m http.server 8000`, puis ouvrir `http://localhost:8000`.
