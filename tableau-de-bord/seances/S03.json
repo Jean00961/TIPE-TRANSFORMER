@@ -1,0 +1,321 @@
+{
+  "id": "S03",
+  "numero": 3,
+  "titre": "MLP et rétropropagation manuelle",
+  "date": "2026-12-01",
+  "phase": 1,
+  "pilote": "Jean",
+  "copilote": "Martin",
+  "genere_le": "2026-11-24",
+  "objectif": "Construire un MLP à une couche cachée dont le forward et le backward sont écrits à la main, vérifier chaque gradient par différences finies, puis résoudre XOR, sur lequel le perceptron de S1 échoue.",
+
+  "etat": {
+    "resume": "Fiche écrite le 24 novembre, jour de S2 : l'état de S2 n'est donc pas encore connu. À cette date, `S1/src/neurone.py` est fini, mais les squelettes de `S1/` et `S2/` (perceptron, régression logistique, vérification du gradient et leurs tests) contiennent encore des `pass`. Le journal de S1 a commencé à être rempli. Les fichiers de S3 sont prêts dans `S3/` : guide très détaillé (`S3/GUIDE.md`), squelettes commentés avec valeurs de contrôle vérifiées sur une solution de référence, et tests à compléter.",
+    "reliquats": [
+      "S2 : `sigmoide` stable, `gradient_numerique` et `erreur_relative` doivent être finis et testés : S3 les recopie (voir `S3/GUIDE.md`, partie 0.3).",
+      "S2 : `entrainer` et la figure des coûts selon $\\eta$, s'ils ne sont pas finis : à la maison, pas en séance.",
+      "S1 : perceptron, tests et figure des frontières, s'ils ne sont pas finis : à la maison."
+    ],
+    "alertes": [
+      "Un test dont le corps est `pass` **passe** : « 13 passed » dans `S2/` ne prouve rien tant que les tests ne sont pas écrits. Chercher les `pass` restants avec la commande de `S3/GUIDE.md`, partie 0.2.",
+      "S4 est **bloquante** (MLP ≥ 95 % en test). Tout ce qui reste de S3 doit être fini avant mardi prochain.",
+      "scikit-learn n'est pas installé sur le poste, et S4 en a besoin pour `load_digits`. L'installer cette semaine (commande dans `S3/GUIDE.md`, partie 11).",
+      "Python 3.11 n'est toujours pas dans le PATH : utiliser `& \"$env:LOCALAPPDATA\\Programs\\Python\\Python311\\python.exe\" -m pytest`, lancé **depuis `S3/`**."
+    ]
+  },
+
+  "acquis": [
+    "Expliquer pourquoi une couche cachée suffit pour XOR : on compose deux hyperplans.",
+    "Écrire $Z = XW + b$ avec la forme de chaque matrice.",
+    "Dériver par les indices $\\partial L/\\partial W = X^\\top G$, $\\partial L/\\partial b = \\sum_\\text{lignes} G$ et $\\partial L/\\partial X = G W^\\top$, et les retrouver par les dimensions.",
+    "Écrire le backward d'une activation comme un produit terme à terme.",
+    "Retrouver $\\partial L/\\partial Z = (P - Y)/n$ en composant la sigmoïde et l'entropie croisée.",
+    "Tester le backward d'une couche isolée avec une perte artificielle $\\sum C \\odot \\text{sortie}$.",
+    "Justifier l'initialisation aléatoire (symétrie) et le facteur 2 de l'init de He."
+  ],
+
+  "deroule": [
+    { "debut": 0, "fin": 10, "titre": "Rappel actif", "qui": "Chacun seul", "contenu": "Chacun répond de tête aux questions de rappel sur S2, puis on compare avec `S2/journal.md`. Si $\\partial L/\\partial z = p - y$ n'est pas retrouvé, on le redérive au tableau avant la théorie." },
+    { "debut": 10, "fin": 15, "titre": "Relance", "qui": "Pilote", "contenu": "`python -m pytest -v` dans `S2/`, puis dans `S3/`. Vérifier que les tests de S2 sont vraiment écrits (pas de `pass`)." },
+    { "debut": 15, "fin": 40, "titre": "Théorie", "qui": "Les deux", "contenu": "Les 7 notions ci-dessous. Au tableau : XOR à la main, la dérivation des 3 formules du backward par les indices, et le graphe de calcul du 2-4-1 avec toutes les formes (voir aussi `S3/GUIDE.md`, partie 3)." },
+    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Tâches 0 à 5, une couche puis son test de gradient, puis la suivante. Chaque fonction est d'abord vérifiée dans IDLE avec sa **valeur de contrôle** (dans son docstring). Minimum vital si tout va mal : tâches 1 à 4." },
+    { "debut": 105, "fin": 115, "titre": "Explication croisée", "qui": "Copilote", "contenu": "Martin explique sans regarder l'écran ; Jean joue le jury avec les 5 questions de `S3/GUIDE.md`, partie 6 (cache, dimensions, ordre inverse, preuve du gradient, initialisation)." },
+    { "debut": 115, "fin": 120, "titre": "Clôture", "qui": "Pilote", "contenu": "Remplir `S3/journal.md` (bloc à copier en bas de page), commit « S3 », push sur `main`. Une tâche inachevée laisse un test qui échoue, nommé d'après ce qui reste à faire." }
+  ],
+
+  "rappel_actif": [
+    {
+      "question": "Écrire la sigmoïde et sa dérivée exprimée avec $\\sigma$ elle-même.",
+      "reponse": "$\\sigma(z) = \\dfrac{1}{1 + e^{-z}}$ et $\\sigma'(z) = \\sigma(z)\\,(1 - \\sigma(z))$. Maximum de $\\sigma'$ : $1/4$, en $z = 0$."
+    },
+    {
+      "question": "Pour l'entropie croisée binaire avec $p = \\sigma(z)$, que vaut $\\partial L/\\partial z$ ? Pourquoi le facteur $p(1-p)$ disparaît-il ?",
+      "reponse": "$\\partial L/\\partial z = p - y$. Le $p(1-p)$ de la sigmoïde se simplifie avec le dénominateur de $\\partial L/\\partial p = \\dfrac{p - y}{p(1-p)}$."
+    },
+    {
+      "question": "Sur un batch, $X$ de forme `(n, d)` : écrire $\\nabla_w L$ et $\\partial L/\\partial b$ avec leurs formes.",
+      "reponse": "$\\nabla_w L = \\frac{1}{n} X^\\top (p - y)$, de forme `(d,)` comme $w$ ; $\\partial L/\\partial b = \\text{moyenne}(p - y)$, un nombre."
+    },
+    {
+      "question": "Formule des différences finies centrées, et seuil attendu pour l'erreur relative ?",
+      "reponse": "$\\dfrac{f(w + \\varepsilon e_i) - f(w - \\varepsilon e_i)}{2\\varepsilon}$ avec $\\varepsilon = 10^{-5}$ ; erreur relative $\\dfrac{\\lVert g_1 - g_2\\rVert}{\\lVert g_1\\rVert + \\lVert g_2\\rVert} < 10^{-6}$. Piège : `w_plus = w` ne copie pas."
+    }
+  ],
+
+  "theorie": [
+    {
+      "id": "t1",
+      "titre": "Pourquoi une couche cachée suffit pour XOR",
+      "duree": 4,
+      "au_tableau": true,
+      "contenu": "On combine **deux** hyperplans avec deux neurones ReLU :\n$$h_1 = \\text{ReLU}(x_1 + x_2), \\qquad h_2 = \\text{ReLU}(x_1 + x_2 - 1), \\qquad s = h_1 - 2\\,h_2$$\nAu tableau, remplir $h_1$, $h_2$, $s$ pour les 4 points : on trouve $s = 0, 1, 1, 0$, exactement XOR.\n\nLecture géométrique : la couche cachée **change de repère**. Dans le plan $(h_1, h_2)$, les points $(0,1)$ et $(1,0)$ tombent au même endroit, et XOR devient linéairement séparable. La dernière couche n'est qu'un perceptron dans ce repère.\n\nAvec une sigmoïde en sortie : $p = \\sigma(10\\,s - 5)$. Ces poids exacts servent de test (`test_poids_a_la_main_resolvent_xor`).",
+      "formule": "s = \\text{ReLU}(x_1 + x_2) - 2\\,\\text{ReLU}(x_1 + x_2 - 1)",
+      "dimensions": "2 entrées, 2 neurones cachés, 1 sortie",
+      "piege": "Sans la ReLU, $s$ serait une fonction linéaire de $x$ : deux couches linéaires n'en font qu'une. Toute la puissance vient de la non-linéarité."
+    },
+    {
+      "id": "t2",
+      "titre": "La couche linéaire en lot",
+      "duree": 3,
+      "au_tableau": false,
+      "contenu": "Pour $n$ exemples : $Z = XW + b$.\n- La colonne $j$ de $W$ est le vecteur de poids du neurone $j$ de S1.\n- Une couche linéaire, c'est $d_\\text{sortie}$ neurones côte à côte, appliqués à $n$ exemples en même temps.\n- $b$ est ajouté à **chaque ligne** par broadcasting.\n\nNombre de paramètres : $d_\\text{entree} \\times d_\\text{sortie} + d_\\text{sortie}$. Pour le 2-4-1 : $8 + 4 + 4 + 1 = 17$. Pour le 64-128-10 de S4 : 9 610.",
+      "formule": "Z = XW + b",
+      "dimensions": "$X$ : `(n, d_e)` · $W$ : `(d_e, d_s)` · $b$ : `(d_s,)` · $Z$ : `(n, d_s)`",
+      "piege": "`W` de forme `(d_s, d_e)` (convention « une ligne par neurone ») oblige à écrire `X @ W.T` partout. On garde une **colonne** par neurone, comme dans tout le projet."
+    },
+    {
+      "id": "t3",
+      "titre": "Les trois formules du backward",
+      "duree": 8,
+      "au_tableau": true,
+      "contenu": "On note $G = \\partial L/\\partial Z$, de forme `(n, d_s)`, le gradient qui arrive de la couche suivante. Par les indices, à partir de $Z_{ij} = \\sum_k X_{ik} W_{kj} + b_j$ :\n1. $\\dfrac{\\partial L}{\\partial W_{kj}} = \\sum_i G_{ij}\\, X_{ik} = (X^\\top G)_{kj}$\n2. $\\dfrac{\\partial L}{\\partial b_j} = \\sum_i G_{ij}$ (somme de chaque colonne)\n3. $\\dfrac{\\partial L}{\\partial X_{ik}} = \\sum_j G_{ij}\\, W_{kj} = (G\\,W^\\top)_{ik}$\n\n**Méthode des dimensions** : le gradient a toujours la forme de ce qu'on dérive. ∂L/∂W doit être `(d_e, d_s)` avec `X (n, d_e)` et `G (n, d_s)` : seule `X.T @ G` convient.\n\n∂L/∂X sert à **transmettre** le gradient à la couche d'avant : c'est la rétropropagation.\n\nLien avec S2 : $d_s = 1$ et $G = (p - y)/n$ redonnent $\\nabla_w = X^\\top (p-y)/n$.\n\nExemple de contrôle : $X$ = 1 `(4, 3)`, $W = \\begin{pmatrix}1&2\\\\3&4\\\\5&6\\end{pmatrix}$, $b = (0{,}5; -0{,}5)$, $G$ = 1 `(4, 2)` donnent des lignes de $Z$ égales à $(9{,}5; 11{,}5)$, $dW = 4$ partout, $db = (4; 4)$, des lignes de $dX$ égales à $(3; 7; 11)$.",
+      "formule": "\\frac{\\partial L}{\\partial W} = X^\\top G, \\quad \\frac{\\partial L}{\\partial b} = \\sum_{\\text{lignes}} G, \\quad \\frac{\\partial L}{\\partial X} = G\\,W^\\top",
+      "dimensions": "$X^\\top G$ : `(d_e, n) @ (n, d_s)` = `(d_e, d_s)` · $G W^\\top$ : `(n, d_s) @ (d_s, d_e)` = `(n, d_e)` · $db$ : `(d_s,)`",
+      "piege": "Diviser une deuxième fois par $n$ dans la couche : le $1/n$ est déjà dans $G$ (il vient de la perte). Et `G.sum()` au lieu de `G.sum(axis=0)` renvoie un nombre au lieu d'un vecteur."
+    },
+    {
+      "id": "t4",
+      "titre": "Les activations : un produit terme à terme",
+      "duree": 3,
+      "au_tableau": false,
+      "contenu": "Une activation agit case par case : $A = \\varphi(Z)$. Donc $\\partial L/\\partial Z = \\partial L/\\partial A \\odot \\varphi'(Z)$, avec $\\odot$ le produit terme à terme (`*` en NumPy).\n- **ReLU** : on met en cache le masque `Z > 0` ; backward `G * masque`. Le gradient passe là où le neurone était actif, il est coupé ailleurs. En $Z = 0$, on prend 0 par convention.\n- **Sigmoïde** : on met en cache la sortie $P$ ; backward `G * P * (1 - P)`, sans recalculer d'exponentielle.",
+      "formule": "\\frac{\\partial L}{\\partial Z} = \\frac{\\partial L}{\\partial A} \\odot \\varphi'(Z)",
+      "dimensions": "$Z$, $A$, $G$ et le masque : même forme `(n, d)`",
+      "piege": "`G @ masque` (produit matriciel) au lieu de `G * masque`. Et tester ReLU sur des entiers : un $Z = 0$ fait échouer la différence finie sans qu'il y ait de bug."
+    },
+    {
+      "id": "t5",
+      "titre": "La perte, et p − y retrouvé par composition",
+      "duree": 2,
+      "au_tableau": false,
+      "contenu": "Le réseau sort $P$ `(n, 1)`, les étiquettes $Y$ sont `(n, 1)`.\n$$\\frac{\\partial L}{\\partial P} = \\frac{1}{n}\\cdot\\frac{P - Y}{P(1-P)}$$\nLa couche `Sigmoide` multiplie par $P(1-P)$ : on obtient $\\partial L/\\partial Z = (P - Y)/n$, **le résultat de S2**, mais par composition de deux briques indépendantes. Un test le vérifie.\n\nDiviser par $P(1-P)$ est fragile près de 0 ou 1 : on borne $P$ avec `np.clip`. En S4, on fusionnera activation et perte.",
+      "formule": "\\frac{\\partial L}{\\partial Z} = \\frac{P - Y}{n}",
+      "dimensions": "$P$, $Y$, $\\partial L/\\partial P$ : `(n, 1)` · $L$ : scalaire",
+      "piege": "**Piège n°1 de la séance** : `P` de forme `(4, 1)` moins `y` de forme `(4,)` donne une matrice `(4, 4)` par broadcasting, sans aucune erreur. Le réseau apprend n'importe quoi. Toujours `Y` en `(n, 1)` et `assert P.shape == Y.shape` dans la perte."
+    },
+    {
+      "id": "t6",
+      "titre": "Le graphe de calcul du 2-4-1",
+      "duree": 3,
+      "au_tableau": true,
+      "contenu": "Forward (chaque couche met en cache ce dont son backward aura besoin) :\n$X$ `(4, 2)` → `Lineaire(2, 4)` → $Z_1$ `(4, 4)` → `ReLU` → $H$ `(4, 4)` → `Lineaire(4, 1)` → $Z_2$ `(4, 1)` → `Sigmoide` → $P$ `(4, 1)` → perte $L$.\n\nBackward (liste des couches parcourue **à l'envers**) :\n1. perte : $\\partial L/\\partial P$ `(4, 1)`\n2. `Sigmoide` : $G_2 = (P - Y)/n$ `(4, 1)`\n3. `Lineaire(4, 1)` : $dW_2 = H^\\top G_2$ `(4, 1)`, $db_2$ `(1,)`, renvoie $G_2 W_2^\\top$ `(4, 4)`\n4. `ReLU` : multiplie par le masque, `(4, 4)`\n5. `Lineaire(2, 4)` : $dW_1 = X^\\top G_1$ `(2, 4)`, $db_1$ `(4,)`\n\nPuis $W \\leftarrow W - \\eta\\,dW$ et $b \\leftarrow b - \\eta\\,db$ pour chaque couche linéaire. Un forward et un backward donnent **tous** les gradients.",
+      "formule": "",
+      "dimensions": "voir chaque étape ci-dessus, pour $n = 4$",
+      "piege": "Passer le même $G$ de départ à toutes les couches au lieu de faire circuler le résultat : les tests de couches isolées passent, mais pas celui du réseau entier."
+    },
+    {
+      "id": "t7",
+      "titre": "L'initialisation : symétrie et init de He",
+      "duree": 2,
+      "au_tableau": false,
+      "contenu": "**Symétrie.** Si toutes les colonnes de $W_1$ sont égales (et les $b_1$ aussi), les neurones cachés calculent la même chose, reçoivent le même gradient, et restent égaux après la mise à jour : par récurrence, pour toujours. Le réseau se comporte comme s'il n'avait qu'un neurone caché. Avec des zéros : $H = 0$ donc $dW = 0$, rien ne bouge.\n\n**He.** $W \\sim \\mathcal{N}(0, 2/d_e)$, $b = 0$. Une ReLU annule environ la moitié des valeurs, donc divise l'énergie du signal par 2 ; le facteur 2 compense, et l'ordre de grandeur des activations reste stable d'une couche à l'autre.",
+      "formule": "W \\sim \\mathcal{N}\\!\\left(0,\\ \\frac{2}{d_e}\\right)",
+      "dimensions": "écart-type $\\sqrt{2/d_e}$ : environ 0,0447 pour $d_e = 1000$",
+      "piege": "`rng.normal(moyenne, ecart_type, size)` prend l'**écart-type**, pas la variance : passer `np.sqrt(2.0 / d_entree)`."
+    }
+  ],
+
+  "taches": [
+    {
+      "id": "c0",
+      "titre": "Faire le point sur S2",
+      "duree": 5,
+      "fichier": "S2/src/verif_gradient.py",
+      "bonus": false,
+      "etapes": [
+        "`git pull`, puis chercher les `pass` restants dans `S1/` et `S2/` (commande de `S3/GUIDE.md`, partie 0.2).",
+        "Vérifier que `sigmoide`, `gradient_numerique` et `erreur_relative` sont finis **et** que leurs tests sont écrits.",
+        "Si ce n'est pas le cas : les finir maintenant en suivant le guide de S2, et couper d'abord la tâche 6 (voir plan B).",
+        "Noter les autres reliquats de S1 et S2 dans le journal : ils se font à la maison."
+      ],
+      "test": "Dans `S2/`, `python -m pytest -v` est vert **et** les tests de `test_verif_gradient.py` ne contiennent plus de `pass`."
+    },
+    {
+      "id": "c1",
+      "titre": "Vérification du gradient pour les matrices",
+      "duree": 10,
+      "fichier": "S3/src/verif_gradient.py",
+      "bonus": false,
+      "etapes": [
+        "Recopier le corps de `gradient_numerique` et `erreur_relative` depuis `S2/src/verif_gradient.py`.",
+        "Remplacer `for i in range(len(w))` par `for indice in np.ndindex(w.shape)` : `w_plus[indice]` désigne alors une seule case, pour un vecteur comme pour une matrice.",
+        "Contrôle : `gradient_numerique(lambda M: np.sum(M ** 2), M)` avec `M = [[1, 2, 3], [4, 5, 6]]` donne $2M$, de forme `(2, 3)`."
+      ],
+      "test": "`S3/tests/test_verif_gradient.py` : 4 tests, dont `test_matrice_non_modifiee_et_produit` (le gradient de $\\sum C \\odot M$ vaut $C$ et $M$ n'est pas modifiée)."
+    },
+    {
+      "id": "c2",
+      "titre": "Sigmoïde et couche Lineaire",
+      "duree": 15,
+      "fichier": "S3/src/couches.py",
+      "bonus": false,
+      "etapes": [
+        "Recopier la `sigmoide` stable de S2.",
+        "`Lineaire.__init__(d_entree, d_sortie, rng)` : init de He avec **exactement** l'appel du docstring (sinon les valeurs de contrôle de `mlp.py` ne correspondent plus).",
+        "`avant(X)` : `self.X = X`, renvoie `Z`.",
+        "`arriere(G)` : stocke `self.dW` et `self.db`, renvoie `dX`. Afficher les trois formes une fois.",
+        "Contrôle : l'exemple numérique de la notion 3."
+      ],
+      "test": "`test_lineaire_formes`, `test_lineaire_valeurs_a_la_main` et `test_init_he` (écart-type ≈ 0,0447 pour `Lineaire(1000, 500)`)."
+    },
+    {
+      "id": "c3",
+      "titre": "ReLU, Sigmoide et entropie croisée",
+      "duree": 10,
+      "fichier": "S3/src/couches.py",
+      "bonus": false,
+      "etapes": [
+        "`ReLU` : cache `self.masque = Z > 0` ; backward `G * self.masque`.",
+        "`Sigmoide` : cache `self.P` ; backward `G * P * (1 - P)`.",
+        "`EntropieCroiseeBinaire.avant(P, Y)` : `assert P.shape == Y.shape`, `np.clip`, moyenne. `arriere()` sans argument renvoie $\\partial L/\\partial P$.",
+        "Contrôles : ReLU sur `[[-1, 2], [0, -3]]` donne `[[0, 2], [0, 0]]` ; la perte vaut $\\ln 2$ pour $P = 0{,}5$ ; composée avec la sigmoïde, on retrouve $(P - Y)/n$."
+      ],
+      "test": "`test_relu_valeurs`, `test_sigmoide_valeurs`, `test_entropie_valeurs`, `test_entropie_refuse_mauvaise_forme` et `test_sigmoide_puis_perte_redonne_p_moins_y`."
+    },
+    {
+      "id": "c4",
+      "titre": "Tests de gradient des couches isolées",
+      "duree": 10,
+      "fichier": "S3/tests/test_couches.py",
+      "bonus": false,
+      "etapes": [
+        "Perte artificielle : $f(\\text{entrée}) = \\sum C \\odot \\text{couche.avant(entrée)}$, avec $C$ aléatoire fixe. Pour elle, le gradient à la main est `couche.arriere(C)`.",
+        "Toujours dans cet ordre : gradient à la main d'abord (et `.copy()`), gradient numérique ensuite (il écrase le cache).",
+        "Pour $dW$ et $db$ : une fonction qui remplace `couche.W`, calcule, puis **remet** l'ancienne valeur.",
+        "Référence : erreurs relatives de l'ordre de $10^{-11}$."
+      ],
+      "test": "`test_gradient_lineaire_en_X`, `_en_W`, `_en_b`, `test_gradient_relu` et `test_gradient_sigmoide` : erreur relative $< 10^{-6}$."
+    },
+    {
+      "id": "c5",
+      "titre": "Le MLP et son entraînement sur XOR",
+      "duree": 15,
+      "fichier": "S3/src/mlp.py",
+      "bonus": false,
+      "etapes": [
+        "`MLP(tailles, graine)` : un seul `rng` ; une `ReLU` entre deux linéaires, une `Sigmoide` après la dernière.",
+        "`avant` dans l'ordre, `arriere` avec `reversed(self.couches)`, `maj(eta)` sur les couches `Lineaire` seulement.",
+        "`nombre_parametres()` (17 pour le 2-4-1) et `predire(X)`.",
+        "`entrainer(mlp, X, Y, eta, n_iterations)` sur le modèle de S2.",
+        "Contrôles (graine 0) : coût initial ≈ 0,7742 ; après 2000 itérations à $\\eta = 0{,}5$, coût ≈ 0,0020 et $P$ ≈ `[0.006, 0.999, 0.999, 0.001]`."
+      ],
+      "test": "`S3/tests/test_mlp.py` : structure, formes, valeurs initiales, poids à la main, **`test_gradient_mlp_entier`** (≈ $10^{-10}$) et `test_entrainement_resout_xor`."
+    },
+    {
+      "id": "c6",
+      "titre": "Figure de XOR : coût et frontière",
+      "duree": 5,
+      "fichier": "S3/experiences/s3_xor.py",
+      "bonus": true,
+      "etapes": [
+        "`donnees_xor()`, avec `Y` de forme `(4, 1)`.",
+        "`tracer_frontiere(mlp, X, Y, ax, titre)` : grille 200 × 200 avec `np.meshgrid`, **un seul** appel à `mlp.avant` sur les 40 000 points, `contourf` et le niveau 0,5 en noir.",
+        "`figure_xor()` : coût en échelle log à gauche, frontière à droite, enregistrer `S3/figures/s3_xor.png`.",
+        "C'est un livrable : si la tâche ne tient pas en séance, la finir à la maison."
+      ],
+      "test": "La figure existe ; la frontière n'est plus une droite mais une ligne brisée qui isole $(0,1)$ et $(1,0)$."
+    },
+    {
+      "id": "c7",
+      "titre": "Toutes les graines ne réussissent pas",
+      "duree": 10,
+      "fichier": "S3/experiences/s3_xor.py",
+      "bonus": true,
+      "etapes": [
+        "**Avant de lancer**, écrire dans le journal une prédiction : sur 20 graines, combien de 2-4-1 résolvent XOR ? Et avec 2, 8, 16 neurones cachés ?",
+        "`taux_de_reussite(n_caches, n_graines=20)`, puis `figure_taux_de_reussite()` : CSV et figure.",
+        "Bonus B1 en même temps : `test_init_constante_garde_les_neurones_identiques`."
+      ],
+      "test": "`S3/figures/s3_taux_reussite.png` et `S3/experiences/s3_taux_reussite.csv` existent ; le test B1 passe.",
+      "solution": "Référence (η = 0,5, 2000 itérations, graines 0 à 19) : 2 neurones cachés → 0,10 ; 3 → 0,35 ; 4 → 0,75 ; 8 → 1,0 ; 16 → 1,0. Les échecs du 2-4-1 (graines 5, 7, 8, 10, 17) ne dépendent pas de η. Cause : des neurones ReLU **morts** (éteints pour presque toutes les entrées, donc de gradient nul). Un réseau plus grand que nécessaire apprend mieux, alors que 2 neurones suffisent en théorie : c'est la question de l'élagage."
+    },
+    {
+      "id": "c8",
+      "titre": "La spirale : largeur contre profondeur",
+      "duree": 15,
+      "fichier": "S3/experiences/s3_spirale.py",
+      "bonus": true,
+      "etapes": [
+        "`generer_spirale(100)` : deux bras opposés, rayon de 0 à 1, bruit d'écart-type 0,02. Contrôle : `X.shape == (200, 2)`.",
+        "`comparer_architectures()` : 2-16-1, 2-300-1 et 2-32-32-1, $\\eta = 0{,}5$, 5000 itérations, graine 0 ; frontières, précision, temps.",
+        "Enregistrer `S3/figures/s3_spirale.png`."
+      ],
+      "test": "La figure montre les trois frontières avec, dans chaque titre, l'architecture, le nombre de paramètres et la précision.",
+      "solution": "Référence : 2-16-1 (65 paramètres) → 0,775 ; 2-300-1 (1201) → 1,0, coût ≈ 0,020, ≈ 2 s ; 2-32-32-1 (1185) → 1,0, coût ≈ 0,0006, ≈ 0,6 s. À nombre de paramètres presque égal, le réseau profond atteint un coût 30 fois plus bas, 3 fois plus vite."
+    }
+  ],
+
+  "plan_b": [
+    "Si les fonctions indispensables de S2 manquent (tâche 0), elles passent d'abord : on coupe les bonus, puis la figure (tâche 6).",
+    "Un test de gradient échoue depuis plus de 10 min : réduire à $n = 1$, $d_e = 2$, $d_s = 1$, calculer le gradient à la main sur papier et comparer case par case avec `print`.",
+    "Les couches passent leurs tests mais pas le MLP entier : l'erreur est dans `MLP.arriere` (ordre inverse, résultat qui circule).",
+    "XOR non résolu alors que tous les gradients sont justes : essayer d'autres graines (certaines échouent normalement), puis vérifier la forme de `Y` et le signe de la mise à jour.",
+    "Minimum vital si tout va mal : tâches 1 à 4 (couches et tests de gradient). Le MLP se finit à la maison avant S4, qui est bloquante."
+  ],
+
+  "livrables": [
+    "`S3/src/couches.py` et `S3/src/mlp.py` avec leurs tests écrits et verts",
+    "`test_gradient_mlp_entier` vert (erreur relative $< 10^{-6}$)",
+    "XOR résolu par un 2-4-1 entraîné",
+    "`S3/figures/s3_xor.png`",
+    "`S3/journal.md` rempli, avec la prédiction du bonus B2 si on l'a fait",
+    "Fiche-équations A5 n°3",
+    "Commit « S3 » poussé sur `main`"
+  ],
+
+  "questions_jury": [
+    {
+      "question": "Pourquoi votre réseau résout-il XOR alors que le perceptron échoue ?",
+      "piste": "La couche cachée combine deux hyperplans et change de repère : montrer les poids à la main $h_1 = \\text{ReLU}(x_1 + x_2)$, $h_2 = \\text{ReLU}(x_1 + x_2 - 1)$, $s = h_1 - 2h_2$. Sans non-linéarité, deux couches linéaires n'en font qu'une."
+    },
+    {
+      "question": "Comment êtes-vous sûrs de vos gradients ?",
+      "piste": "Différences finies centrées, couche par couche puis sur le réseau entier, avec une perte artificielle $\\sum C \\odot \\text{sortie}$ ; erreur relative mesurée de l'ordre de $10^{-11}$."
+    },
+    {
+      "question": "Pourquoi la rétropropagation plutôt que les différences finies pour entraîner ?",
+      "piste": "Les différences finies demandent 2 forwards **par paramètre** (34 pour le 2-4-1, près de 20 000 pour le 64-128-10 de S4). La rétropropagation donne tous les gradients en un forward et un backward."
+    },
+    {
+      "question": "Pourquoi ReLU et pas la sigmoïde dans la couche cachée ?",
+      "piste": "$\\sigma' \\le 1/4$ : le gradient est divisé par au moins 4 à chaque couche sigmoïde (évanouissement). La dérivée de ReLU vaut 1 là où le neurone est actif. Contrepartie : les neurones morts."
+    },
+    {
+      "question": "Pourquoi certaines initialisations échouent-elles ?",
+      "piste": "Neurones ReLU morts ou minimum local. Mesure : 15 graines sur 20 réussissent avec 4 neurones cachés, 20 sur 20 avec 8. On entraîne plus grand que nécessaire, d'où l'intérêt d'élaguer ensuite."
+    }
+  ],
+
+  "ancrage": {
+    "phrase": "Le gradient a la forme de ce qu'on dérive : ∂L/∂W = XᵀG se retrouve par les dimensions.",
+    "fiche": "Fiche A5 n°3 : $Z = XW + b$ avec les formes ; les 3 formules du backward avec leurs dimensions ; le backward des activations ($\\odot$, masque, $P(1-P)$) ; $(P - Y)/n$ par composition ; init de He ; les pièges (`Y` en `(n, 1)`, `axis=0`, pas de double $1/n$)."
+  },
+
+  "etonnement": "pourquoi certaines graines échouent sur XOR alors que 2 neurones suffisent en théorie, ou pourquoi le réseau profond bat le réseau large à nombre de paramètres égal.",
+
+  "suite": {
+    "id": "S04",
+    "titre": "Classification multiclasse sur données réelles",
+    "a_relire": "La veille : la fiche n°3 et la ligne « première action » du journal. Installer scikit-learn avant mardi et vérifier que `load_digits().data.shape` vaut `(1797, 64)`. S4 est bloquante."
+  }
+}
