@@ -38,7 +38,7 @@
     { "debut": 0, "fin": 10, "titre": "Rappel actif", "qui": "Chacun seul", "contenu": "Chacun répond de tête aux questions de rappel sur S2, puis on compare avec `S2/journal.md`. Si $\\partial L/\\partial z = p - y$ n'est pas retrouvé, on le redérive au tableau avant la théorie." },
     { "debut": 10, "fin": 15, "titre": "Relance", "qui": "Pilote", "contenu": "`python -m pytest -v` dans `S2/`, puis dans `S3/`. Vérifier que les tests de S2 sont vraiment écrits (pas de `pass`)." },
     { "debut": 15, "fin": 40, "titre": "Théorie", "qui": "Les deux", "contenu": "Les 7 notions ci-dessous. Au tableau : XOR à la main, la dérivation des 3 formules du backward par les indices, et le graphe de calcul du 2-4-1 avec toutes les formes (voir aussi `S3/GUIDE.md`, partie 3)." },
-    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Tâches 0 à 5, une couche puis son test de gradient, puis la suivante. Chaque fonction est d'abord vérifiée dans IDLE avec sa **valeur de contrôle** (dans son docstring). Minimum vital si tout va mal : tâches 1 à 4." },
+    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Les tâches ci-dessous dans l'ordre : une couche, puis son test, puis la suivante. Chaque fonction est d'abord vérifiée dans IDLE avec sa **valeur de contrôle**. Toutes les étapes et les pièges sont dans les tâches. Minimum vital si tout va mal : de « Vérification du gradient pour les matrices » à « Tests de gradient des couches isolées »." },
     { "debut": 105, "fin": 115, "titre": "Explication croisée", "qui": "Copilote", "contenu": "Martin explique sans regarder l'écran ; Jean joue le jury avec les 5 questions de `S3/GUIDE.md`, partie 6 (cache, dimensions, ordre inverse, preuve du gradient, initialisation)." },
     { "debut": 115, "fin": 120, "titre": "Clôture", "qui": "Pilote", "contenu": "Remplir `S3/journal.md` (bloc à copier en bas de page), commit « S3 », push sur `main`. Une tâche inachevée laisse un test qui échoue, nommé d'après ce qui reste à faire." }
   ],
@@ -138,17 +138,19 @@
   "taches": [
     {
       "id": "c0",
-      "titre": "Faire le point sur S2",
+      "titre": "Faire le point sur S1 et S2",
       "duree": 5,
       "fichier": "S2/src/verif_gradient.py",
       "bonus": false,
       "etapes": [
-        "`git pull`, puis chercher les `pass` restants dans `S1/` et `S2/` (commande de `S3/GUIDE.md`, partie 0.2).",
-        "Vérifier que `sigmoide`, `gradient_numerique` et `erreur_relative` sont finis **et** que leurs tests sont écrits.",
-        "Si ce n'est pas le cas : les finir maintenant en suivant le guide de S2, et couper d'abord la tâche 6 (voir plan B).",
-        "Noter les autres reliquats de S1 et S2 dans le journal : ils se font à la maison."
+        "**Pourquoi** : un test dont le corps est `pass` **passe**. « 13 passed » ne prouve donc rien tant que les tests ne sont pas écrits.",
+        "**Étape 1** : `git pull` à la racine du dépôt, pour récupérer les derniers fichiers.",
+        "**Étape 2** : chercher les fonctions et tests encore vides, depuis la racine : `Select-String -Path S1\\src\\*.py, S1\\tests\\*.py, S2\\src\\*.py, S2\\tests\\*.py -Pattern '^\\s+pass$'`. Chaque ligne affichée est une fonction ou un test vide.",
+        "**Étape 3** : vérifier que les **3 fonctions indispensables** de S2 sont finies et testées : `sigmoide` (stable), `gradient_numerique` et `erreur_relative`. S3 les recopie.",
+        "**Si elles manquent** : les finir maintenant (25 min au plus), en suivant les tâches « Sigmoïde stable », « Vérification numérique du gradient » et « Erreur relative » de la fiche S2. On coupe alors les bonus, en commençant par la spirale.",
+        "**Étape 4** : noter les autres reliquats (perceptron, figures de S1 et S2, `entrainer` de S2) dans la ligne *Bloqué* du journal. Ils se font à la maison, ils ne bloquent pas S3."
       ],
-      "test": "Dans `S2/`, `python -m pytest -v` est vert **et** les tests de `test_verif_gradient.py` ne contiennent plus de `pass`."
+      "test": "Dans `S2/`, `python -m pytest -v` est vert **et** `test_verif_gradient.py` ne contient plus aucun `pass`."
     },
     {
       "id": "c1",
@@ -157,120 +159,237 @@
       "fichier": "S3/src/verif_gradient.py",
       "bonus": false,
       "etapes": [
-        "Recopier le corps de `gradient_numerique` et `erreur_relative` depuis `S2/src/verif_gradient.py`.",
-        "Remplacer `for i in range(len(w))` par `for indice in np.ndindex(w.shape)` : `w_plus[indice]` désigne alors une seule case, pour un vecteur comme pour une matrice.",
-        "Contrôle : `gradient_numerique(lambda M: np.sum(M ** 2), M)` avec `M = [[1, 2, 3], [4, 5, 6]]` donne $2M$, de forme `(2, 3)`."
+        "**Étape 1** : recopier le **corps** de `gradient_numerique` et `erreur_relative` depuis `S2/src/verif_gradient.py`. Les docstrings de S3 sont déjà là.",
+        "**Le problème** : en S2, `w` était un vecteur et la boucle était sans doute `for i in range(len(w))`. Pour une matrice `(3, 2)`, `len(w)` vaut 3 et `w_plus[i]` désigne une **ligne entière** : le résultat est faux.",
+        "**Étape 2** : dans IDLE, essayer `for indice in np.ndindex((2, 3)): print(indice)`. Que s'affiche-t-il ? Combien de tours ?",
+        "**Étape 3** : remplacer la boucle par `for indice in np.ndindex(w.shape):`. Alors `w_plus[indice] += eps` désigne **une seule case**, pour un vecteur comme pour une matrice.",
+        "**Étape 4** : `erreur_relative` n'a rien à changer : `np.linalg.norm` d'une matrice est la racine de la somme des carrés de tous ses coefficients (norme de Frobenius).",
+        "**Contrôle 1** : `f = lambda v: np.sum(v ** 2)` en `w = [1, 2, 3]` donne encore environ `[2, 4, 6]`. Rien ne doit avoir cassé.",
+        "**Contrôle 2** : `gradient_numerique(lambda M: np.sum(M ** 2), M)` avec `M = np.array([[1., 2., 3.], [4., 5., 6.]])` donne environ `[[2, 4, 6], [8, 10, 12]]`, de forme `(2, 3)`.",
+        "**Contrôle 3** : `erreur_relative(np.eye(2), np.eye(2))` donne 0.",
+        "**Piège** : `w_plus = w` ne copie pas le tableau (déjà vu en S2) : utiliser `w.copy()`."
       ],
-      "test": "`S3/tests/test_verif_gradient.py` : 4 tests, dont `test_matrice_non_modifiee_et_produit` (le gradient de $\\sum C \\odot M$ vaut $C$ et $M$ n'est pas modifiée)."
+      "test": "`S3/tests/test_verif_gradient.py`, 4 tests : `test_vecteur_somme_des_carres`, `test_erreur_relative`, `test_matrice_somme_des_carres` et `test_matrice_non_modifiee_et_produit` (avec $f(M) = \\sum C \\odot M$, le gradient vaut exactement $C$, et $M$ n'est pas modifiée)."
     },
     {
       "id": "c2",
-      "titre": "Sigmoïde et couche Lineaire",
-      "duree": 15,
+      "titre": "Sigmoïde et initialisation de Lineaire",
+      "duree": 5,
       "fichier": "S3/src/couches.py",
       "bonus": false,
       "etapes": [
-        "Recopier la `sigmoide` stable de S2.",
-        "`Lineaire.__init__(d_entree, d_sortie, rng)` : init de He avec **exactement** l'appel du docstring (sinon les valeurs de contrôle de `mlp.py` ne correspondent plus).",
-        "`avant(X)` : `self.X = X`, renvoie `Z`.",
-        "`arriere(G)` : stocke `self.dW` et `self.db`, renvoie `dX`. Afficher les trois formes une fois.",
-        "Contrôle : l'exemple numérique de la notion 3."
+        "**Étape 1** : recopier la `sigmoide` stable de S2. Contrôle : `sigmoide(np.zeros((3, 1))).shape == (3, 1)`. Elle doit marcher sur une matrice.",
+        "**`Lineaire.__init__(d_entree, d_sortie, rng)`** : initialisation de He, $W \\sim \\mathcal{N}(0,\\ 2 / d_\\text{entree})$ et $b = 0$.",
+        "**Étape 2** : écrire **exactement** `self.W = rng.normal(0.0, np.sqrt(2.0 / d_entree), size=(d_entree, d_sortie))`. Un autre ordre ou une autre forme donne d'autres poids, et les valeurs de contrôle de « La classe MLP » ne correspondront plus.",
+        "**Étape 3** : `self.b`, un vecteur de `d_sortie` zéros.",
+        "**Contrôle** : `Lineaire(3, 2, np.random.default_rng(0))` donne `W.shape == (3, 2)` et `b.shape == (2,)`. Avec `Lineaire(1000, 500, rng)`, `W.std()` vaut environ 0,0447, soit $\\sqrt{2/1000}$.",
+        "**Piège 1** : `rng.normal` prend l'**écart-type**, pas la variance. Il faut `np.sqrt(2.0 / d_entree)`.",
+        "**Piège 2** : ne pas créer un nouveau `rng` dans la couche. Toutes les couches de même taille auraient alors les mêmes poids."
       ],
-      "test": "`test_lineaire_formes`, `test_lineaire_valeurs_a_la_main` et `test_init_he` (écart-type ≈ 0,0447 pour `Lineaire(1000, 500)`)."
+      "test": "`test_init_he` : avec `Lineaire(1000, 500, ...)`, `abs(W.mean()) < 0.001`, `np.isclose(W.std(), np.sqrt(2 / 1000), rtol=0.01)` et `np.all(b == 0)`."
     },
     {
       "id": "c3",
-      "titre": "ReLU, Sigmoide et entropie croisée",
+      "titre": "Lineaire : forward et backward",
       "duree": 10,
       "fichier": "S3/src/couches.py",
       "bonus": false,
       "etapes": [
-        "`ReLU` : cache `self.masque = Z > 0` ; backward `G * self.masque`.",
-        "`Sigmoide` : cache `self.P` ; backward `G * P * (1 - P)`.",
-        "`EntropieCroiseeBinaire.avant(P, Y)` : `assert P.shape == Y.shape`, `np.clip`, moyenne. `arriere()` sans argument renvoie $\\partial L/\\partial P$.",
-        "Contrôles : ReLU sur `[[-1, 2], [0, -3]]` donne `[[0, 2], [0, 0]]` ; la perte vaut $\\ln 2$ pour $P = 0{,}5$ ; composée avec la sigmoïde, on retrouve $(P - Y)/n$."
+        "**`avant(X)`** : reçoit `X` `(n, d_entree)`, renvoie $Z = XW + b$ `(n, d_sortie)`.",
+        "**Étape 1** : `self.X = X`. C'est le **cache** : `arriere` en aura besoin pour calculer `dW`.",
+        "**Étape 2** : calculer `Z`. Le vecteur `b` `(d_sortie,)` est ajouté à chaque ligne par broadcasting.",
+        "**`arriere(G)`** : reçoit $G = \\partial L / \\partial Z$ `(n, d_sortie)`. Trois formules (notion 3) : `self.dW` $= X^\\top G$ `(d_entree, d_sortie)`, `self.db` = somme des lignes de $G$ `(d_sortie,)`, et on **renvoie** $G W^\\top$ `(n, d_entree)`.",
+        "**Étape 3** : récupérer `X` dans `self.X`, calculer et **stocker** `self.dW` et `self.db`, puis calculer et **renvoyer** `dX`.",
+        "**Étape 4** : la première fois, afficher les trois formes avec `print` et les comparer aux formes ci-dessus. Retirer les `print` ensuite.",
+        "**Contrôle forward** : remplacer à la main `couche.W = [[1, 2], [3, 4], [5, 6]]` et `couche.b = [0.5, -0.5]`, puis `avant(np.ones((4, 3)))` : chaque ligne vaut `[9.5, 11.5]`.",
+        "**Contrôle backward** : ensuite `arriere(np.ones((4, 2)))` : `dW` vaut 4 partout (forme `(3, 2)`), `db = [4, 4]`, chaque ligne de `dX` vaut `[3, 7, 11]`. Le vérifier aussi à la main.",
+        "**Piège 1** : `G.sum(axis=0)` et pas `G.sum()`. On veut un vecteur `(d_sortie,)`, pas un nombre : `axis=0` écrase l'axe des exemples.",
+        "**Piège 2** : pas de division par $n$ ici. Le $1/n$ est déjà dans `G` : il vient de la perte.",
+        "**Piège 3** : `G.T @ X` a la forme `(d_sortie, d_entree)` : c'est la transposée de `dW`. Le test de forme le détecte tout de suite."
       ],
-      "test": "`test_relu_valeurs`, `test_sigmoide_valeurs`, `test_entropie_valeurs`, `test_entropie_refuse_mauvaise_forme` et `test_sigmoide_puis_perte_redonne_p_moins_y`."
+      "test": "`test_lineaire_formes` (une ligne `assert` par forme : `Z`, `dX`, `dW`, `db`) et `test_lineaire_valeurs_a_la_main` (les deux contrôles ci-dessus ; `np.allclose(Z, [9.5, 11.5])` compare chaque ligne par broadcasting)."
     },
     {
       "id": "c4",
+      "titre": "Activation ReLU",
+      "duree": 3,
+      "fichier": "S3/src/couches.py",
+      "bonus": false,
+      "etapes": [
+        "**`avant(Z)`** : `self.masque = Z > 0` (un tableau de booléens), puis renvoyer `Z * self.masque` ou `np.maximum(0, Z)`.",
+        "**`arriere(G)`** : renvoyer `G * self.masque`. Le gradient **passe** là où le neurone était actif, et il est **coupé** ailleurs.",
+        "**Contrôle** : `Z = [[-1, 2], [0, -3]]` donne `[[0, 2], [0, 0]]`. Puis `arriere(np.ones((2, 2)))` donne `[[0, 1], [0, 0]]` : en $Z = 0$, la dérivée vaut 0 par convention.",
+        "**Piège 1** : `np.max(0, Z)` n'est pas `np.maximum(0, Z)`. `np.max` cherche le plus grand élément d'**un** tableau ; `np.maximum` compare case par case.",
+        "**Piège 2** : `G @ masque` est un produit **matriciel**, faux ici. L'activation agit case par case, son backward aussi : produit terme à terme, donc `*`."
+      ],
+      "test": "`test_relu_valeurs` : le contrôle ci-dessus."
+    },
+    {
+      "id": "c5",
+      "titre": "Couche Sigmoide",
+      "duree": 2,
+      "fichier": "S3/src/couches.py",
+      "bonus": false,
+      "etapes": [
+        "**`avant(Z)`** : `self.P = sigmoide(Z)`, puis renvoyer `self.P`. On met en cache la **sortie** $P$, pas $Z$ : grâce à $\\sigma' = \\sigma(1 - \\sigma)$, le backward n'a pas besoin de recalculer d'exponentielle.",
+        "**`arriere(G)`** : renvoyer `G * P * (1 - P)`, avec le `P` du cache.",
+        "**Contrôle** : `Z = np.zeros((2, 1))` donne `[[0.5], [0.5]]`, puis `arriere(np.ones((2, 1)))` donne `[[0.25], [0.25]]`.",
+        "**Piège** : rappeler `sigmoide` dans `arriere` au lieu d'utiliser le cache."
+      ],
+      "test": "`test_sigmoide_valeurs` : le contrôle ci-dessus, et les formes `(2, 1)` dans les deux cas."
+    },
+    {
+      "id": "c6",
+      "titre": "Perte : entropie croisée binaire",
+      "duree": 5,
+      "fichier": "S3/src/couches.py",
+      "bonus": false,
+      "etapes": [
+        "**C'est la fin du graphe** : `avant(P, Y)` renvoie un **nombre**, et `arriere()` ne reçoit rien ($\\partial L / \\partial L = 1$) et renvoie $\\partial L / \\partial P$.",
+        "**Étape 1** : vérifier les formes avec `assert P.shape == Y.shape, f\\\"formes différentes : {P.shape} et {Y.shape}\\\"`. C'est **la** protection contre le piège n°1 de la séance.",
+        "**Étape 2** : borner `P` dans $[10^{-12} ; 1 - 10^{-12}]$ avec `np.clip`, puis garder `self.P` et `self.Y`.",
+        "**Étape 3** : calculer la moyenne de $-[Y \\ln P + (1 - Y) \\ln(1 - P)]$ et la renvoyer avec `float(...)`.",
+        "**Étape 4** : `arriere()` renvoie $\\frac{1}{n} \\cdot \\frac{P - Y}{P(1 - P)}$, de forme `(n, 1)`, avec `n` le nombre de lignes de `Y` (notion 5).",
+        "**Contrôle 1** : `P = [[0.5], [0.5]]`, `Y = [[0], [1]]` donnent $L = \\ln 2 \\approx 0{,}6931$, et `arriere()` donne `[[1], [-1]]`, car $0{,}5 / 0{,}25 / 2 = 1$.",
+        "**Contrôle 2** : `P = [[0.9], [0.2]]`, `Y = [[1], [0]]` donnent environ 0,1643. À la main : $-(\\ln 0{,}9 + \\ln 0{,}8) / 2$.",
+        "**Piège n°1 de la séance** : si `P` est `(4, 1)` et `y` est `(4,)`, alors `P - y` est **`(4, 4)`** par broadcasting. Aucune erreur, et le réseau apprend n'importe quoi. Le voir dans IDLE : `np.array([[0.5], [0.5]]) - np.array([0., 1.])`."
+      ],
+      "test": "`test_entropie_valeurs`, `test_entropie_refuse_mauvaise_forme` (avec `pytest.raises(AssertionError)`) et `test_sigmoide_puis_perte_redonne_p_moins_y` : `sig.arriere(perte.arriere())` redonne `(P - Y) / 6` sur 6 exemples. C'est le résultat de S2, retrouvé par composition."
+    },
+    {
+      "id": "c7",
       "titre": "Tests de gradient des couches isolées",
       "duree": 10,
       "fichier": "S3/tests/test_couches.py",
       "bonus": false,
       "etapes": [
-        "Perte artificielle : $f(\\text{entrée}) = \\sum C \\odot \\text{couche.avant(entrée)}$, avec $C$ aléatoire fixe. Pour elle, le gradient à la main est `couche.arriere(C)`.",
-        "Toujours dans cet ordre : gradient à la main d'abord (et `.copy()`), gradient numérique ensuite (il écrase le cache).",
-        "Pour $dW$ et $db$ : une fonction qui remplace `couche.W`, calcule, puis **remet** l'ancienne valeur.",
-        "Référence : erreurs relatives de l'ordre de $10^{-11}$."
+        "**L'astuce** : `gradient_numerique` a besoin d'une fonction qui renvoie **un nombre**. On fabrique une perte artificielle $f(\\text{entrée}) = \\sum C \\odot \\text{couche.avant(entrée)}$, avec $C$ une matrice **aléatoire** fixe de la forme de la sortie. Pour elle, $\\partial f / \\partial(\\text{sortie}) = C$ : le gradient à la main est donc `couche.arriere(C)`.",
+        "**Ordre obligatoire** : d'abord le gradient à la main (`avant`, puis `arriere`) en gardant une copie avec `.copy()`, **ensuite** le gradient numérique. Il appelle `avant` des dizaines de fois et écrase le cache.",
+        "**`test_gradient_lineaire_en_X`** : `couche = Lineaire(3, 2, rng)`, un biais non nul (`couche.b = rng.normal(size=2)`), `X` `(5, 3)` et `C` `(5, 2)` aléatoires. Numérique : `gradient_numerique(lambda V: np.sum(C * couche.avant(V)), X)`.",
+        "**`test_gradient_lineaire_en_W`** : écrire dans le test une fonction `f(W_essai)` qui garde le vrai `W`, met `W_essai` dans `couche.W`, calcule `np.sum(C * couche.avant(X))`, **remet le vrai `W`**, puis renvoie la valeur. Comparer `couche.dW` à `gradient_numerique(f, couche.W)`.",
+        "**`test_gradient_lineaire_en_b`** : même schéma, avec une fonction qui remplace `couche.b`.",
+        "**`test_gradient_relu`** : `Z` et `C` aléatoires de forme `(5, 4)`, graine 0. Le plus petit $|Z|$ vaut environ 0,04, bien plus que $\\varepsilon = 10^{-5}$ : pas de souci avec le coude de ReLU en 0.",
+        "**`test_gradient_sigmoide`** : même schéma que ReLU, avec `Sigmoide()`.",
+        "**Lecture des résultats** : avec un backward juste, on obtient environ $10^{-11}$. Vers $10^{-3}$ ou plus, il y a une erreur dans le backward. Vers $10^{-7}$, vérifier que `eps` vaut bien $10^{-5}$.",
+        "**Piège 1** : oublier de remettre le vrai `W` : après `gradient_numerique`, `couche.W` vaut le dernier `W - eps` essayé.",
+        "**Piège 2** : tester ReLU sur des entiers. Un $Z = 0$ fait échouer le test sans que le code soit faux.",
+        "**Pourquoi $C$ aléatoire et pas une matrice de 1 ?** Avec des 1, certaines erreurs se compensent, par exemple une transposée oubliée sur une matrice symétrique."
       ],
-      "test": "`test_gradient_lineaire_en_X`, `_en_W`, `_en_b`, `test_gradient_relu` et `test_gradient_sigmoide` : erreur relative $< 10^{-6}$."
+      "test": "Les 5 tests ci-dessus : `assert erreur_relative(main, numerique) < 1e-6`."
     },
     {
-      "id": "c5",
-      "titre": "Le MLP et son entraînement sur XOR",
-      "duree": 15,
+      "id": "c8",
+      "titre": "La classe MLP",
+      "duree": 10,
       "fichier": "S3/src/mlp.py",
       "bonus": false,
       "etapes": [
-        "`MLP(tailles, graine)` : un seul `rng` ; une `ReLU` entre deux linéaires, une `Sigmoide` après la dernière.",
-        "`avant` dans l'ordre, `arriere` avec `reversed(self.couches)`, `maj(eta)` sur les couches `Lineaire` seulement.",
-        "`nombre_parametres()` (17 pour le 2-4-1) et `predire(X)`.",
-        "`entrainer(mlp, X, Y, eta, n_iterations)` sur le modèle de S2.",
-        "Contrôles (graine 0) : coût initial ≈ 0,7742 ; après 2000 itérations à $\\eta = 0{,}5$, coût ≈ 0,0020 et $P$ ≈ `[0.006, 0.999, 0.999, 0.001]`."
+        "**Principe** : le MLP ne contient **aucune** formule de dérivée. Toutes sont dans `couches.py`. Son seul travail est d'appeler les couches dans le bon ordre.",
+        "**`__init__(tailles, graine=0)`** : `rng = np.random.default_rng(graine)` **une seule fois**, puis `self.couches = []`. Pour `i` de 0 à `len(tailles) - 2` : ajouter `Lineaire(tailles[i], tailles[i + 1], rng)`, puis `ReLU()` si ce n'est pas la dernière couche linéaire, sinon `Sigmoide()`.",
+        "**Question** : pour `[2, 4, 1]`, combien de couches linéaires ? Combien de couches au total ? (Réponse : 2 et 4.)",
+        "**`avant(X)`** : une boucle sur `self.couches`. La sortie d'une couche est l'entrée de la suivante.",
+        "**`arriere(G)`** : une boucle sur `reversed(self.couches)`. Ce que renvoie l'`arriere` d'une couche est le `G` de la couche d'avant.",
+        "**`maj(eta)`** : pour chaque couche avec `isinstance(couche, Lineaire)`, écrire `couche.W -= eta * couche.dW`, et de même pour `b`.",
+        "**`nombre_parametres()`** : la somme de `W.size + b.size` sur les couches linéaires. **`predire(X)`** : `(self.avant(X) > 0.5).astype(int)`, de forme `(n, 1)`.",
+        "**Contrôle (graine 0)** : les couches sont `['Lineaire', 'ReLU', 'Lineaire', 'Sigmoide']` ; `mlp.couches[0].W[0]` vaut environ `[0.1257, -0.1321, 0.6404, 0.1049]` ; `nombre_parametres()` vaut 17 pour `[2, 4, 1]`, 1185 pour `[2, 32, 32, 1]` et 9610 pour `[64, 128, 10]`.",
+        "**Contrôle forward** : sur les 4 points de XOR, `mlp.avant(X)` donne environ `[[0.5], [0.2951], [0.4154], [0.2628]]`. Le premier vaut exactement 0,5 : pourquoi ? Indice : $x = (0, 0)$ et $b = 0$ au départ.",
+        "**Piège 1** : passer le `G` de départ à toutes les couches, au lieu de faire circuler le résultat. Les tests des couches isolées passent, mais le test du MLP entier échoue.",
+        "**Piège 2** : recréer `rng` ou créer les couches dans un autre ordre. Le réseau marche, mais les valeurs de contrôle ne correspondent plus."
       ],
-      "test": "`S3/tests/test_mlp.py` : structure, formes, valeurs initiales, poids à la main, **`test_gradient_mlp_entier`** (≈ $10^{-10}$) et `test_entrainement_resout_xor`."
+      "test": "Dans `S3/tests/test_mlp.py` : `test_structure`, `test_formes_avant_arriere`, `test_valeurs_initiales`, `test_poids_a_la_main_resolvent_xor` (avec `MLP([2, 2, 1])`, `W1 = [[1, 1], [1, 1]]`, `b1 = [0, -1]`, `W2 = [[10], [-20]]`, `b2 = [-5]`), puis **`test_gradient_mlp_entier`** (graine 1, $W$ de la première puis de la dernière couche linéaire, environ $10^{-10}$)."
     },
     {
-      "id": "c6",
+      "id": "c9",
+      "titre": "Entraîner le MLP sur XOR",
+      "duree": 5,
+      "fichier": "S3/src/mlp.py",
+      "bonus": false,
+      "etapes": [
+        "**`entrainer(mlp, X, Y, eta, n_iterations)`** renvoie `couts`, la liste des pertes, chacune calculée **avant** la mise à jour, comme en S2.",
+        "**Étapes** : `perte = EntropieCroiseeBinaire()`, puis à chaque itération : `P = mlp.avant(X)` ; ajouter `perte.avant(P, Y)` à `couts` ; `mlp.arriere(perte.arriere())` ; `mlp.maj(eta)`.",
+        "**Données** : `donnees_xor()` est fournie dans `test_mlp.py`. Attention : `Y` est de forme `(4, 1)`, **pas** `(4,)`.",
+        "**Contrôle (graine 0, $\\eta = 0{,}5$, 2000 itérations)** : `couts[0]` ≈ 0,7742 ; `couts[100]` ≈ 0,2019 ; `couts[500]` ≈ 0,0118 ; `couts[-1]` ≈ 0,0020 ; ensuite `mlp.avant(X)` ≈ `[0.006, 0.999, 0.999, 0.001]`.",
+        "**Si le coût initial n'est pas 0,7742** mais que le reste marche : c'est presque toujours l'appel à `rng.normal` (variance au lieu de l'écart-type, ou `size` mal écrit) ou un `rng` recréé pour chaque couche.",
+        "**Si le coût augmente** : le signe de la mise à jour dans `maj`. **S'il stagne vers 0,693** ($\\ln 2$) : la forme de `Y`, puis le `reversed`.",
+        "**À savoir** : certaines graines n'arrivent pas à résoudre XOR (bonus « Toutes les graines ne réussissent pas »). Ce n'est pas forcément un bug : tester d'abord avec la graine 0."
+      ],
+      "test": "`test_entrainement_resout_xor` : `len(couts) == 2000`, `couts[-1] < 0.01`, et `mlp.predire(X)` redonne `Y`."
+    },
+    {
+      "id": "c10",
       "titre": "Figure de XOR : coût et frontière",
       "duree": 5,
       "fichier": "S3/experiences/s3_xor.py",
       "bonus": true,
       "etapes": [
-        "`donnees_xor()`, avec `Y` de forme `(4, 1)`.",
-        "`tracer_frontiere(mlp, X, Y, ax, titre)` : grille 200 × 200 avec `np.meshgrid`, **un seul** appel à `mlp.avant` sur les 40 000 points, `contourf` et le niveau 0,5 en noir.",
-        "`figure_xor()` : coût en échelle log à gauche, frontière à droite, enregistrer `S3/figures/s3_xor.png`.",
-        "C'est un livrable : si la tâche ne tient pas en séance, la finir à la maison."
+        "**C'est un livrable** : si la tâche ne tient pas en séance, la finir à la maison.",
+        "**`donnees_xor()`** : `X` `(4, 2)` et `Y` `(4, 1)`, comme dans les tests.",
+        "**`tracer_frontiere(mlp, X, Y, ax, titre)`**, étape 1 : une grille de `X[:, 0].min() - 0.5` à `X[:, 0].max() + 0.5` (de même pour la 2e coordonnée), avec `np.linspace(..., 200)` puis `A, B = np.meshgrid(xs, ys)`.",
+        "**Étape 2** : les 40 000 points en **une seule** matrice : `points = np.column_stack([A.ravel(), B.ravel()])`, puis **un seul** appel `P = mlp.avant(points).reshape(A.shape)`. C'est la force de la vectorisation.",
+        "**Étape 3** : `ax.contourf(A, B, P, levels=20, cmap='RdBu_r', alpha=0.8)`, puis la frontière $P = 0{,}5$ en noir avec `ax.contour(A, B, P, levels=[0.5], colors='k')`, puis les points avec `ax.scatter`.",
+        "**`figure_xor()`** : `MLP([2, 4, 1], graine=0)`, 2000 itérations à $\\eta = 0{,}5$. À gauche, le coût en échelle log (`ax1.set_yscale('log')` ; essayer sans) ; à droite, la frontière. Enregistrer `S3/figures/s3_xor.png`.",
+        "**Contrôle** : `points.shape == (40000, 2)` et `P.shape == (200, 200)`.",
+        "**À observer** : comparer avec la figure de XOR de S1. Combien de « morceaux de droite » forment la frontière ? Chaque neurone ReLU ajoute au plus un pli."
       ],
-      "test": "La figure existe ; la frontière n'est plus une droite mais une ligne brisée qui isole $(0,1)$ et $(1,0)$."
+      "test": "La figure existe : la frontière n'est plus une droite, mais une ligne brisée qui isole $(0, 1)$ et $(1, 0)$."
     },
     {
-      "id": "c7",
+      "id": "c11",
+      "titre": "L'initialisation symétrique, constatée",
+      "duree": 5,
+      "fichier": "S3/tests/test_mlp.py",
+      "bonus": true,
+      "etapes": [
+        "**Idée** (notion 7) : si tous les poids sont égaux, les neurones cachés calculent la même chose, reçoivent le même gradient, et restent des clones pour toujours.",
+        "**Étape 1** : `mlp = MLP([2, 4, 1], graine=0)`, puis pour chaque couche linéaire `c.W[:] = 0.5`. Le `[:]` remplit le tableau existant au lieu d'en créer un nouveau.",
+        "**Étape 2** : entraîner 2000 itérations à $\\eta = 0{,}5$.",
+        "**Étape 3** : `W1 = mlp.couches[0].W` ; vérifier `np.allclose(W1, W1[:, [0]])`. `W1[:, [0]]` a la forme `(2, 1)` : le broadcasting la compare à chaque colonne.",
+        "**Étape 4** : vérifier que XOR n'est **pas** résolu.",
+        "**Pour aller plus loin** : avec des poids tous nuls, `W1` reste exactement nul. Pourquoi ? Indice : $H = 0$, donc $dW_2 = H^\\top G_2 = 0$."
+      ],
+      "test": "`test_init_constante_garde_les_neurones_identiques` passe : la preuve expérimentale de l'argument de symétrie."
+    },
+    {
+      "id": "c12",
       "titre": "Toutes les graines ne réussissent pas",
       "duree": 10,
       "fichier": "S3/experiences/s3_xor.py",
       "bonus": true,
       "etapes": [
-        "**Avant de lancer**, écrire dans le journal une prédiction : sur 20 graines, combien de 2-4-1 résolvent XOR ? Et avec 2, 8, 16 neurones cachés ?",
-        "`taux_de_reussite(n_caches, n_graines=20)`, puis `figure_taux_de_reussite()` : CSV et figure.",
-        "Bonus B1 en même temps : `test_init_constante_garde_les_neurones_identiques`."
+        "**Avant de lancer**, écrire dans le journal une **prédiction chiffrée** : sur 20 graines, combien de 2-4-1 résolvent XOR ? Et avec 2, 8, 16 neurones cachés ? C'est le réflexe du fil rouge : une hypothèse **avant** la mesure.",
+        "**`taux_de_reussite(n_caches, n_graines=20)`** : pour chaque graine de 0 à 19, un nouveau `MLP([2, n_caches, 1], graine)`, entraîner, et compter 1 si `predire(X)` redonne exactement `Y`. Renvoyer la proportion.",
+        "**Une seule variable change** : `n_caches`. Mêmes données, mêmes graines, même $\\eta$, même nombre d'itérations.",
+        "**`figure_taux_de_reussite()`** : `n_caches` dans `[2, 3, 4, 8, 16]` (environ 6 s, afficher la progression avec `print`). Écrire `S3/experiences/s3_taux_reussite.csv` (en-tête `n_caches,taux`, puis une ligne par valeur, avec `open` et `f.write`).",
+        "**La figure** : barres (`ax.bar`) ou courbe avec marqueurs ; axe $y$ entre 0 et 1 ; le titre précise `n_graines`, $\\eta$ et `n_iterations`, sinon la figure ne se reproduit pas. Enregistrer `S3/figures/s3_taux_reussite.png`."
       ],
-      "test": "`S3/figures/s3_taux_reussite.png` et `S3/experiences/s3_taux_reussite.csv` existent ; le test B1 passe.",
-      "solution": "Référence (η = 0,5, 2000 itérations, graines 0 à 19) : 2 neurones cachés → 0,10 ; 3 → 0,35 ; 4 → 0,75 ; 8 → 1,0 ; 16 → 1,0. Les échecs du 2-4-1 (graines 5, 7, 8, 10, 17) ne dépendent pas de η. Cause : des neurones ReLU **morts** (éteints pour presque toutes les entrées, donc de gradient nul). Un réseau plus grand que nécessaire apprend mieux, alors que 2 neurones suffisent en théorie : c'est la question de l'élagage."
+      "test": "La figure et le CSV existent. Comparer à la prédiction, **puis** seulement à la réponse de référence.",
+      "solution": "Référence ($\\eta = 0{,}5$, 2000 itérations, graines 0 à 19) : 2 neurones cachés → 0,10 ; 3 → 0,35 ; 4 → 0,75 ; 8 → 1,0 ; 16 → 1,0. Les échecs du 2-4-1 (graines 5, 7, 8, 10, 17) ne dépendent pas de $\\eta$. Cause : des neurones ReLU **morts**, éteints pour presque toutes les entrées, donc de gradient nul. Un réseau plus grand que nécessaire apprend mieux, alors que 2 neurones suffisent en théorie : c'est la question de l'élagage (voir la *Lottery Ticket Hypothesis*, Frankle et Carbin, 2019)."
     },
     {
-      "id": "c8",
+      "id": "c13",
       "titre": "La spirale : largeur contre profondeur",
       "duree": 15,
       "fichier": "S3/experiences/s3_spirale.py",
       "bonus": true,
       "etapes": [
-        "`generer_spirale(100)` : deux bras opposés, rayon de 0 à 1, bruit d'écart-type 0,02. Contrôle : `X.shape == (200, 2)`.",
-        "`comparer_architectures()` : 2-16-1, 2-300-1 et 2-32-32-1, $\\eta = 0{,}5$, 5000 itérations, graine 0 ; frontières, précision, temps.",
-        "Enregistrer `S3/figures/s3_spirale.png`."
+        "**`generer_spirale(n_par_bras, bruit=0.02, graine=0)`**, étape 1 : angles `t = np.linspace(0.25, 3 * np.pi, n_par_bras)` (un tour et demi) et rayons `r = t / (3 * np.pi)`.",
+        "**Étape 2** : bras 0, les points $(r \\cos t,\\ r \\sin t)$ empilés avec `np.column_stack` ; bras 1, l'**opposé** du bras 0 (rotation d'un demi-tour).",
+        "**Étape 3** : `np.vstack` des deux bras, plus un bruit `rng.normal(0, bruit, size=X.shape)`. `Y` : des zéros puis des uns, de forme `(2 * n_par_bras, 1)`.",
+        "**Contrôle** : avec 100 points par bras, `X.shape == (200, 2)`, `Y.shape == (200, 1)`, `Y.sum() == 100`, et `np.abs(X).max()` proche de 1. Tracer les points une fois pour vérifier l'allure.",
+        "**`comparer_architectures()`** : générer la spirale **une seule fois**, puis pour 2-16-1, 2-300-1 et 2-32-32-1 : `MLP(..., graine=0)`, entraîner 5000 itérations à $\\eta = 0{,}5$, mesurer le temps avec `time.perf_counter()`, et la précision avec `np.mean(mlp.predire(X) == Y)`.",
+        "**La figure** : trois panneaux avec `tracer_frontiere` (de la figure de XOR). Le titre de chacun donne l'architecture, le nombre de paramètres et la précision. Enregistrer `S3/figures/s3_spirale.png`."
       ],
-      "test": "La figure montre les trois frontières avec, dans chaque titre, l'architecture, le nombre de paramètres et la précision.",
-      "solution": "Référence : 2-16-1 (65 paramètres) → 0,775 ; 2-300-1 (1201) → 1,0, coût ≈ 0,020, ≈ 2 s ; 2-32-32-1 (1185) → 1,0, coût ≈ 0,0006, ≈ 0,6 s. À nombre de paramètres presque égal, le réseau profond atteint un coût 30 fois plus bas, 3 fois plus vite."
+      "test": "La figure montre les trois frontières, avec l'architecture, le nombre de paramètres et la précision dans chaque titre.",
+      "solution": "Référence (graine 0 ; les temps dépendent du poste) : 2-16-1 (65 paramètres) → précision 0,775, coût ≈ 0,51, ≈ 0,3 s ; 2-300-1 (1201) → 1,0, coût ≈ 0,020, ≈ 2 s ; 2-32-32-1 (1185) → 1,0, coût ≈ 0,0006, ≈ 0,6 s. À nombre de paramètres presque égal, le réseau profond atteint un coût 30 fois plus bas, 3 fois plus vite : chaque couche replie l'espace produit par la précédente, et les plis se composent. Le 2-300-1 est plus lent, car il a 300 activations cachées par exemple, contre 64."
     }
   ],
 
   "plan_b": [
-    "Si les fonctions indispensables de S2 manquent (tâche 0), elles passent d'abord : on coupe les bonus, puis la figure (tâche 6).",
+    "Si les fonctions indispensables de S2 manquent (« Faire le point sur S1 et S2 »), elles passent d'abord : on coupe les bonus, la figure de XOR passant en dernier.",
     "Un test de gradient échoue depuis plus de 10 min : réduire à $n = 1$, $d_e = 2$, $d_s = 1$, calculer le gradient à la main sur papier et comparer case par case avec `print`.",
     "Les couches passent leurs tests mais pas le MLP entier : l'erreur est dans `MLP.arriere` (ordre inverse, résultat qui circule).",
     "XOR non résolu alors que tous les gradients sont justes : essayer d'autres graines (certaines échouent normalement), puis vérifier la forme de `Y` et le signe de la mise à jour.",
-    "Minimum vital si tout va mal : tâches 1 à 4 (couches et tests de gradient). Le MLP se finit à la maison avant S4, qui est bloquante."
+    "Minimum vital si tout va mal : les couches et leurs tests de gradient (jusqu'à « Tests de gradient des couches isolées »). Le MLP se finit à la maison avant S4, qui est bloquante."
   ],
 
   "livrables": [
