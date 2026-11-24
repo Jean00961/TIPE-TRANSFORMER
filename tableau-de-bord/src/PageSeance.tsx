@@ -52,6 +52,8 @@ export function PageSeance({
   const [etat, setEtat] = useStockageLocal(`tipe-fiche-${fiche.id}`, ETAT_VIDE, normaliserEtat);
   const [modeRappel, setModeRappel] = useStockageLocal("tipe-mode-rappel", false, (b) => b === true);
   const [menuOuvert, setMenuOuvert] = useState(false);
+  // Sur ordinateur, le menu replié reste replié d'une visite à l'autre.
+  const [menuReplie, setMenuReplie] = useStockageLocal("tipe-menu-replie", false, (b) => b === true);
   const maintenant = useHorloge(5000);
 
   const minutesEcoulees = etat.debut === undefined ? null : (maintenant - etat.debut) / 60000;
@@ -103,6 +105,24 @@ export function PageSeance({
     window.addEventListener("keydown", surTouche);
     return () => window.removeEventListener("keydown", surTouche);
   }, [menuOuvert]);
+
+  // Ctrl + B (ou Cmd + B) replie ou déplie le menu sur ordinateur.
+  useEffect(() => {
+    const surTouche = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setMenuReplie((r) => !r);
+      }
+    };
+    window.addEventListener("keydown", surTouche);
+    return () => window.removeEventListener("keydown", surTouche);
+  }, [setMenuReplie]);
+
+  // Le bouton de la barre du haut ouvre le tiroir sur téléphone, déplie le menu sur ordinateur.
+  const ouvrirMenu = () => {
+    if (window.matchMedia("(max-width: 900px)").matches) setMenuOuvert(true);
+    else setMenuReplie(false);
+  };
 
   const modifier = (changement: Partial<EtatSeance>) => setEtat((e) => ({ ...e, ...changement }));
   const demarrer = () => modifier({ debut: Date.now() });
@@ -256,7 +276,7 @@ export function PageSeance({
   };
 
   return (
-    <div className="appli">
+    <div className={`appli ${menuReplie ? "appli--reduit" : ""}`}>
       <Lateral
         categories={categories}
         active={active}
@@ -271,11 +291,18 @@ export function PageSeance({
         onDemarrer={demarrer}
         ouvert={menuOuvert}
         onFermer={() => setMenuOuvert(false)}
+        onReplier={() => setMenuReplie(true)}
       />
 
       <div className="principal">
         <header className="barre-mobile">
-          <button type="button" className="bouton-icone" onClick={() => setMenuOuvert(true)} aria-label="Ouvrir le menu">
+          <button
+            type="button"
+            className="bouton-icone"
+            onClick={ouvrirMenu}
+            aria-label="Ouvrir le menu"
+            title="Ouvrir le menu (Ctrl + B)"
+          >
             <Icone nom="menu" />
           </button>
           <span className="barre-mobile__titre">{categorie?.libelle}</span>

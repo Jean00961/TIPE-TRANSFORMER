@@ -172,6 +172,8 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; overflow-wra
 }
 
 .lateral .lateral__fermer { display: none; }
+.lateral__boutons { display: flex; gap: 6px; }
+.lateral .lateral__replier { display: none; }
 
 .lateral__chrono {
   background: var(--surface-2);
@@ -321,27 +323,37 @@ pre code { background: none; border: 0; padding: 0; font-size: 1em; overflow-wra
   font-variant-numeric: tabular-nums;
 }
 
-.barre-mobile { display: none; }
+/* Barre du haut : sur téléphone, ou sur ordinateur quand le menu est replié. */
+.barre-mobile {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--fond) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--bordure);
+}
+
+.barre-mobile__titre { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .voile { display: none; }
+
+/* Ordinateur : le menu peut être replié pour laisser toute la largeur au contenu. */
+@media (min-width: 901px) {
+  .lateral .lateral__replier { display: grid; }
+  .appli--reduit { grid-template-columns: minmax(0, 1fr); }
+  .appli--reduit .lateral { display: none; }
+  .appli--reduit .barre-mobile { display: flex; }
+}
+
 
 /* Téléphone et petite tablette : le menu devient un tiroir. */
 @media (max-width: 900px) {
   .appli { display: block; }
 
-  .barre-mobile {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    background: color-mix(in srgb, var(--fond) 90%, transparent);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--bordure);
-  }
-
-  .barre-mobile__titre { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barre-mobile { display: flex; }
 
   .lateral {
     position: fixed;

@@ -22,6 +22,7 @@ export function Lateral({
   onDemarrer,
   ouvert,
   onFermer,
+  onReplier,
 }: {
   categories: Categorie[];
   active: string;
@@ -33,6 +34,8 @@ export function Lateral({
   onDemarrer: () => void;
   ouvert: boolean;
   onFermer: () => void;
+  /** Sur ordinateur : masque le menu pour laisser toute la largeur au contenu. */
+  onReplier: () => void;
 }) {
   const choisirCategorie = (e: MouseEvent, id: string) => {
     e.preventDefault();
@@ -57,9 +60,20 @@ export function Lateral({
               <span className="lateral__sous-marque">Fiches de séance</span>
             </span>
           </a>
-          <button type="button" className="bouton-icone lateral__fermer" onClick={onFermer} aria-label="Fermer le menu">
-            <Icone nom="fermer" />
-          </button>
+          <div className="lateral__boutons">
+            <button
+              type="button"
+              className="bouton-icone lateral__replier"
+              onClick={onReplier}
+              aria-label="Replier le menu"
+              title="Replier le menu (Ctrl + B)"
+            >
+              <Icone nom="replier" />
+            </button>
+            <button type="button" className="bouton-icone lateral__fermer" onClick={onFermer} aria-label="Fermer le menu">
+              <Icone nom="fermer" />
+            </button>
+          </div>
         </div>
 
         <div className="lateral__chrono">

@@ -56,6 +56,13 @@ const TRACES = {
       <path d="M4 17h16" />
     </>
   ),
+  replier: (
+    <>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+      <path d="M9 4.5v15" />
+      <path d="m15.5 10-2 2 2 2" />
+    </>
+  ),
   fermer: (
     <>
       <path d="m6 6 12 12" />
