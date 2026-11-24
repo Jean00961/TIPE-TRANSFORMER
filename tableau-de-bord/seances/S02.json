@@ -1,0 +1,265 @@
+{
+  "id": "S02",
+  "numero": 2,
+  "titre": "Apprendre par descente de gradient",
+  "date": "2026-11-24",
+  "phase": 1,
+  "pilote": "Martin",
+  "copilote": "Jean",
+  "genere_le": "2026-11-24",
+  "objectif": "Minimiser une vraie fonction de coût (l'entropie croisée), avec un gradient calculé à la main puis vérifié numériquement par différences finies.",
+
+  "etat": {
+    "resume": "S1 a eu lieu, mais elle n'est pas terminée. `S1/src/neurone.py` est fini (`heaviside`, `neurone`, `neurone_batch`). En revanche, `perceptron.py`, les tests, la figure des frontières et le journal sont encore vides. Les fichiers de S2 sont prêts dans `S2/` : squelettes commentés avec valeurs de contrôle, et un guide pas à pas dans `S2/GUIDE.md`.",
+    "reliquats": [
+      "`S1/src/perceptron.py` : écrire `entrainer_perceptron`.",
+      "`S1/tests/test_neurone.py` et `S1/tests/test_perceptron.py` : remplacer les `pass` par de vrais tests.",
+      "`S1/experiences/s1_frontieres.py` : la figure des frontières ET, OU, XOR.",
+      "`S1/journal.md` : l'entrée de S1, qui est vide."
+    ],
+    "alertes": [
+      "Le journal de S1 est vide. Le remplir en premier (5 min) : c'est la seule trace qui fait foi, et la préparation automatique du lundi s'en sert.",
+      "Les reliquats de S1 prennent 20 min sur le créneau Code. L'expérience sur $\\eta$ (tâche 6) passe donc en bonus : à finir à la maison si elle ne tient pas en séance.",
+      "Le code est rangé par séance (`S1/`, `S2/`), alors que le plan prévoit `src/` et `tests/` à la racine. Lancer `pytest` **depuis le dossier de la séance**, sinon les imports échouent.",
+      "Python 3.11 n'est pas dans le PATH : `python` lance encore la 3.6. Utiliser `& \"$env:LOCALAPPDATA\\Programs\\Python\\Python311\\python.exe\" -m pytest`, ou IDLE 3.11."
+    ]
+  },
+
+  "acquis": [
+    "Expliquer pourquoi on remplace l'échelon par la sigmoïde : il faut une fonction dérivable.",
+    "Démontrer $\\sigma'(z) = \\sigma(z)(1 - \\sigma(z))$.",
+    "Dériver à la main $\\partial L / \\partial z = p - y$ pour l'entropie croisée binaire.",
+    "Écrire le gradient sur un batch $\\nabla_w L = X^\\top (p - y) / n$ et vérifier sa forme.",
+    "Vérifier un gradient par différences finies centrées et lire une erreur relative.",
+    "Décrire l'effet du pas $\\eta$ sur la descente : trop petit, trop grand."
+  ],
+
+  "deroule": [
+    { "debut": 0, "fin": 10, "titre": "Rappel actif", "qui": "Chacun seul", "contenu": "Chacun redessine de tête l'hyperplan de S1 avec $w$ normal, puis répond aux questions de rappel ci-dessous. Ensuite, on remplit ensemble `S1/journal.md`." },
+    { "debut": 10, "fin": 15, "titre": "Relance", "qui": "Pilote", "contenu": "Dans `S1/`, lancer `python -m pytest -v` avec Python 3.11. Les tests passent, mais ils sont vides : c'est la première tâche à régler." },
+    { "debut": 15, "fin": 40, "titre": "Théorie", "qui": "Les deux", "contenu": "Les 6 notions ci-dessous. La dérivation de $\\partial L / \\partial z = p - y$ se fait au tableau, étape par étape (voir aussi `S2/GUIDE.md`, partie 1)." },
+    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Reliquats de S1, puis tâches 2 à 5. Chaque fonction est vérifiée dans IDLE avec sa **valeur de contrôle** (dans son docstring), puis par son test." },
+    { "debut": 105, "fin": 115, "titre": "Explication croisée", "qui": "Copilote", "contenu": "Le copilote explique à voix haute, sans regarder l'écran : pourquoi $\\partial L / \\partial z = p - y$, et pourquoi le gradient en $w$ a la même forme que $w$." },
+    { "debut": 115, "fin": 120, "titre": "Clôture", "qui": "Pilote", "contenu": "Remplir `S2/journal.md` (bloc à copier en bas de page), commit « S2 », push sur `main`." }
+  ],
+
+  "rappel_actif": [
+    {
+      "question": "Écrire l'équation du neurone et dessiner l'hyperplan associé en 2D. Où est $w$ sur le dessin ?",
+      "reponse": "$y = \\varphi(w \\cdot x + b)$. La frontière est la droite $w \\cdot x + b = 0$, et $w$ lui est **orthogonal** : il pointe vers le côté où le neurone répond 1."
+    },
+    {
+      "question": "Pourquoi `if z >= 0:` plante-t-il quand `z` est un tableau, et que fallait-il écrire dans `heaviside` ?",
+      "reponse": "`if` attend **un seul** booléen, alors que `z >= 0` en donne un par case : NumPy refuse de choisir (« truth value of an array is ambiguous »). `np.where(z >= 0, 1, 0)` traite chaque case séparément, et marche aussi sur un nombre."
+    },
+    {
+      "question": "Quelle est la forme de `X @ w + b` si `X` est de forme `(n, d)` ? Combien de fois ajoute-t-on `b` dans la version boucle de `neurone` ?",
+      "reponse": "`(n,)` : une sortie par exemple. Dans la boucle, on accumule les $d$ produits $w_k x_k$, puis on ajoute `b` **une seule fois**, après la boucle."
+    },
+    {
+      "question": "Pourquoi aucun perceptron ne peut calculer XOR ?",
+      "reponse": "Les 4 points donnent $b < 0$, $w_1 + w_2 + b < 0$, $w_1 + b \\ge 0$, $w_2 + b \\ge 0$. En sommant les deux dernières : $w_1 + w_2 + b \\ge -b > 0$, ce qui contredit la deuxième. C'est une limite de représentation."
+    }
+  ],
+
+  "theorie": [
+    {
+      "id": "t1",
+      "titre": "La sigmoïde remplace l'échelon",
+      "duree": 5,
+      "au_tableau": true,
+      "contenu": "L'échelon a une dérivée nulle partout (sauf en 0, où elle n'existe pas) : impossible de savoir dans quel sens bouger $w$. On le remplace par la **sigmoïde**, qui donne une probabilité $p \\in \\,]0, 1[$ :\n$$p = \\sigma(z) = \\frac{1}{1 + e^{-z}}, \\qquad z = w \\cdot x + b$$\nPropriétés à établir au tableau :\n1. $\\sigma(0) = 1/2$, limites 0 en $-\\infty$ et 1 en $+\\infty$.\n2. $\\sigma(-z) = 1 - \\sigma(z)$.\n3. $\\sigma'(z) = \\sigma(z)\\,(1 - \\sigma(z))$. Indice : dériver $(1 + e^{-z})^{-1}$, puis écrire $\\frac{e^{-z}}{1 + e^{-z}} = 1 - \\sigma(z)$.\n\nLa frontière de décision ($p = 1/2$) reste l'hyperplan $w \\cdot x + b = 0$ de S1.",
+      "formule": "\\sigma'(z) = \\sigma(z)\\,\\bigl(1 - \\sigma(z)\\bigr)",
+      "dimensions": "$z$ et $p$ : même forme, `(n,)` sur un batch",
+      "piege": "Pour $z = -1000$, $e^{-z}$ déborde (`overflow`). La version stable choisit la formule selon le signe de $z$ : $\\frac{1}{1 + e^{-z}}$ si $z \\ge 0$, $\\frac{e^{z}}{1 + e^{z}}$ si $z < 0$. Les deux sont égales, mais seule l'une ne calcule jamais l'exponentielle d'un grand nombre positif."
+    },
+    {
+      "id": "t2",
+      "titre": "Le coût : entropie croisée binaire",
+      "duree": 4,
+      "au_tableau": false,
+      "contenu": "Pour un exemple $(x, y)$ avec $y \\in \\{0, 1\\}$ et $p = \\sigma(z)$ :\n$$L = -\\bigl[\\,y \\ln p + (1 - y) \\ln(1 - p)\\,\\bigr]$$\n- Si $y = 1$, il reste $-\\ln p$ : nul si $p = 1$, infini si $p \\to 0$.\n- Si $y = 0$, il reste $-\\ln(1 - p)$ : le symétrique.\n\nOn punit donc très fort une prédiction **sûre et fausse**. Sur un batch, on prend la **moyenne** des $n$ coûts.\n\nValeur à retenir : avec $w = 0$ et $b = 0$, $p = 1/2$ partout et $L = \\ln 2 \\approx 0{,}693$.",
+      "formule": "L = -\\frac{1}{n} \\sum_{i=1}^{n} \\bigl[\\,y_i \\ln p_i + (1 - y_i) \\ln(1 - p_i)\\,\\bigr]",
+      "dimensions": "$y$, $p$ : `(n,)` · $L$ : scalaire",
+      "piege": "$\\ln 0 = -\\infty$ : borner $p$ dans $[10^{-12} ; 1 - 10^{-12}]$ avant le logarithme (`np.clip`). Et ne pas oublier le signe moins : le coût est **positif**."
+    },
+    {
+      "id": "t3",
+      "titre": "Le résultat clé : ∂L/∂z = p − y",
+      "duree": 8,
+      "au_tableau": true,
+      "contenu": "Dérivation pour un seul exemple, à faire au tableau :\n1. $\\dfrac{\\partial L}{\\partial p} = -\\dfrac{y}{p} + \\dfrac{1 - y}{1 - p}$\n2. Règle de la chaîne : $\\dfrac{\\partial L}{\\partial z} = \\dfrac{\\partial L}{\\partial p} \\cdot \\dfrac{\\partial p}{\\partial z}$, avec $\\dfrac{\\partial p}{\\partial z} = p(1 - p)$ (notion 1).\n3. On développe : $-y(1 - p) + (1 - y)p = p - y$.\n\nLe facteur $p(1 - p)$ de la sigmoïde **se simplifie** avec le dénominateur de l'entropie croisée. C'est pour cela qu'on associe ces deux fonctions.\n\nInterprétation : le gradient est l'**écart** entre la prédiction et la vérité. Si $p = y$, on ne bouge pas.",
+      "formule": "\\frac{\\partial L}{\\partial z} = p - y",
+      "dimensions": "un scalaire par exemple ; `(n,)` sur un batch",
+      "piege": "Avec l'erreur quadratique $(p - y)^2$, le facteur $p(1 - p)$ **reste** : quand $p$ est proche de 0 ou de 1 et faux, le gradient est presque nul et l'apprentissage stagne. Bonne question de jury."
+    },
+    {
+      "id": "t4",
+      "titre": "Le gradient sur un batch",
+      "duree": 3,
+      "au_tableau": false,
+      "contenu": "Comme $z_i = w \\cdot x_i + b$, on a $\\partial z_i / \\partial w_j = x_{ij}$ et $\\partial z_i / \\partial b = 1$. En moyennant sur les $n$ exemples :\n$$\\nabla_w L = \\frac{1}{n} X^\\top (p - y), \\qquad \\frac{\\partial L}{\\partial b} = \\frac{1}{n} \\sum_i (p_i - y_i)$$\nVérifier les formes : `X.T` est `(d, n)`, `p - y` est `(n,)`, donc le produit est `(d,)`. C'est la forme de $w$ : normal, c'est son gradient.\n\nValeur de contrôle : $X = \\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}$, $y = (0, 1)$, $w = 0$, $b = 0$ donnent $\\nabla_w L = (-0{,}5 ; -0{,}5)$ et $\\partial L / \\partial b = 0$.",
+      "formule": "\\nabla_w L = \\frac{1}{n} X^\\top (p - y)",
+      "dimensions": "$X^\\top$ : `(d, n)` · $p - y$ : `(n,)` · $\\nabla_w L$ : `(d,)` · $\\partial L / \\partial b$ : scalaire",
+      "piege": "Écrire `X @ (p - y)` au lieu de `X.T @ (p - y)` : NumPy lève une erreur de forme, sauf si $n = d$, où le résultat est faux **sans prévenir**. Toujours afficher `grad_w.shape`."
+    },
+    {
+      "id": "t5",
+      "titre": "Descente de gradient et rôle du pas η",
+      "duree": 2,
+      "au_tableau": false,
+      "contenu": "À chaque itération, on fait un pas dans la direction **opposée** au gradient :\n$$w \\leftarrow w - \\eta\\,\\nabla_w L, \\qquad b \\leftarrow b - \\eta\\,\\frac{\\partial L}{\\partial b}$$\n- $\\eta$ trop petit : le coût baisse, mais très lentement.\n- $\\eta$ trop grand : le coût oscille, voire remonte.\n\nContrairement à S1, $\\eta$ compte vraiment : les mises à jour ne sont plus proportionnelles à $\\eta$ seul, car $p$ dépend de $w$ de façon non linéaire.",
+      "formule": "w \\leftarrow w - \\eta\\,\\nabla_w L",
+      "dimensions": "",
+      "piege": "Un $+$ à la place du $-$ : le coût **monte**. C'est le premier réflexe à vérifier quand la courbe de coût augmente dès le départ."
+    },
+    {
+      "id": "t6",
+      "titre": "Vérifier un gradient : différences finies centrées",
+      "duree": 3,
+      "au_tableau": false,
+      "contenu": "On ne fait jamais confiance à un gradient calculé à la main. On le compare, coordonnée par coordonnée, à :\n$$g_i \\approx \\frac{f(w + \\varepsilon e_i) - f(w - \\varepsilon e_i)}{2\\varepsilon}$$\noù $e_i$ vaut 1 en position $i$ et 0 ailleurs, avec $\\varepsilon = 10^{-5}$. Puis on calcule l'**erreur relative** :\n$$\\text{err} = \\frac{\\lVert g_\\text{main} - g_\\text{num} \\rVert}{\\lVert g_\\text{main} \\rVert + \\lVert g_\\text{num} \\rVert}$$\nLecture : moins de $10^{-6}$, c'est juste ; plus de $10^{-3}$, il y a une erreur. Cet outil servira jusqu'en S10.",
+      "formule": "\\frac{f(w + \\varepsilon e_i) - f(w - \\varepsilon e_i)}{2\\varepsilon}",
+      "dimensions": "$w$, $g$ : `(d,)` · $f(w)$ : scalaire",
+      "piege": "`w_plus = w` ne copie pas le tableau : modifier `w_plus` modifie `w`. Utiliser `w.copy()`. Et ne pas vérifier en $w = 0$ seulement : certaines erreurs y passent inaperçues."
+    }
+  ],
+
+  "taches": [
+    {
+      "id": "c1",
+      "titre": "Reliquats de S1 : perceptron et tests",
+      "duree": 20,
+      "fichier": "S1/src/perceptron.py",
+      "bonus": false,
+      "etapes": [
+        "`entrainer_perceptron(X, y, eta, n_epoques)` : écrire d'abord sur papier ce que fait **une** époque. Suivre le découpage de `S2/GUIDE.md`, partie 0.1.",
+        "Importer `neurone` en haut du fichier : `from neurone import neurone`.",
+        "Remplacer les `pass` de `S1/tests/test_neurone.py` et `S1/tests/test_perceptron.py` (5 tests, chacun décrit dans son docstring).",
+        "Faire échouer un test exprès (changer `y_et`) pour vérifier qu'il sert à quelque chose, puis le remettre."
+      ],
+      "test": "Dans `S1/`, `python -m pytest -v` affiche 5 tests `PASSED`, dont `test_xor_echoue`."
+    },
+    {
+      "id": "c2",
+      "titre": "Sigmoïde stable et sa dérivée",
+      "duree": 10,
+      "fichier": "S2/src/regression_logistique.py",
+      "bonus": false,
+      "etapes": [
+        "`sigmoide(z)` : écrire d'abord la version naïve, puis essayer `sigmoide(-1000)` dans IDLE et lire le warning.",
+        "Rendre la fonction stable en choisissant la formule selon le signe de $z$ (notion 1). Attention : `np.where` calcule les **deux** branches.",
+        "`derivee_sigmoide(z)` : appeler `sigmoide` une seule fois.",
+        "Valeurs de contrôle : $\\sigma(0) = 0{,}5$, $\\sigma(2) \\approx 0{,}8808$, $\\sigma'(0) = 0{,}25$."
+      ],
+      "test": "`S2/tests/test_regression_logistique.py` : `test_sigmoide_zero`, `test_sigmoide_symetrie`, `test_sigmoide_stable` (aucun warning sur $[-1000, 0, 1000]$) et `test_derivee_sigmoide`."
+    },
+    {
+      "id": "c3",
+      "titre": "Régression logistique : probabilités, coût, gradient",
+      "duree": 15,
+      "fichier": "S2/src/regression_logistique.py",
+      "bonus": false,
+      "etapes": [
+        "`probabilites(X, w, b)` : comme `neurone_batch` de S1, avec `sigmoide` à la place de `heaviside`. Sortie de forme `(n,)`.",
+        "`cout(X, y, w, b)` : entropie croisée moyenne, avec `np.clip` avant `np.log`. Contrôle : $\\ln 2 \\approx 0{,}6931$ quand $w = 0$ et $b = 0$.",
+        "`gradient(X, y, w, b)` : renvoie `(grad_w, grad_b)`. Afficher `grad_w.shape`, qui doit valoir `(d,)`.",
+        "Contrôle du gradient : la valeur à la main de la notion 4."
+      ],
+      "test": "`test_probabilites_forme`, `test_cout_vaut_ln2_en_zero` et `test_gradient_valeur_connue`."
+    },
+    {
+      "id": "c4",
+      "titre": "Vérification numérique du gradient",
+      "duree": 15,
+      "fichier": "S2/src/verif_gradient.py",
+      "bonus": false,
+      "etapes": [
+        "`gradient_numerique(f, w, eps=1e-5)` : générique, `f` prend un vecteur et renvoie un nombre. Une copie de `w` pour $+\\varepsilon$, une autre pour $-\\varepsilon$.",
+        "Contrôle : avec `f = lambda v: np.sum(v ** 2)` en $w = (1, 2, 3)$, on doit trouver environ $(2, 4, 6)$, et `w` ne doit pas avoir changé.",
+        "`erreur_relative(g1, g2)` : renvoyer 0 si les deux normes sont nulles.",
+        "Comparer avec `gradient` en un $w$ **aléatoire** (pas nul) : `f = lambda v: cout(X, y, v, b)`."
+      ],
+      "test": "`S2/tests/test_verif_gradient.py` : erreur relative $< 10^{-6}$ en $w$ et en $b$, et `test_gradient_numerique_ne_modifie_pas_w`."
+    },
+    {
+      "id": "c5",
+      "titre": "Descente de gradient",
+      "duree": 5,
+      "fichier": "S2/src/regression_logistique.py",
+      "bonus": false,
+      "etapes": [
+        "`entrainer(X, y, eta, n_iterations)` : part de $w = 0$, $b = 0$ ; à chaque itération, enregistrer le coût, puis faire un pas **contre** le gradient.",
+        "Contrôle : `couts[0]` vaut $\\ln 2$, et la liste décroît sur la porte ET avec $\\eta = 1$."
+      ],
+      "test": "`test_entrainement_fait_baisser_le_cout` : sur ET, 1000 itérations, `couts[-1] < 0.1` et les prédictions $p > 0{,}5$ redonnent `y`."
+    },
+    {
+      "id": "c6",
+      "titre": "Courbes de coût selon η",
+      "duree": 20,
+      "fichier": "S2/experiences/s2_couts_eta.py",
+      "bonus": true,
+      "etapes": [
+        "`generer_nuages(n_par_classe, graine)` : deux nuages gaussiens centrés en $(-1, -1)$ et $(1, 1)$. Contrôle : `X.shape == (200, 2)` pour 100 points par classe.",
+        "`tracer_couts_selon_eta()` : générer les données **une seule fois**, puis tracer sur une même figure les coûts pour $\\eta \\in \\{0{,}01 ; 0{,}1 ; 1 ; 10\\}$, 200 itérations.",
+        "Enregistrer `S2/figures/s2_couts_eta.png`.",
+        "Avec ces données, $\\eta = 10$ ne diverge pas encore. Essayer 50 et 100 : à partir de quand le coût remonte-t-il ? Le noter en ligne *étonnement*."
+      ],
+      "test": "La figure existe et montre 4 courbes : $\\eta = 0{,}01$ descend lentement, $\\eta = 1$ et $\\eta = 10$ atteignent vite le plateau.",
+      "solution": "Valeurs de référence (graine 0, 200 itérations) : le coût final vaut environ 0,36 pour $\\eta = 0{,}01$, 0,23 pour $\\eta = 0{,}1$ et 0,226 pour $\\eta = 1$ et 10. Avec $\\eta = 50$, le coût remonte vers 0,37 : le pas est trop grand. Le plateau à 0,226 n'est pas nul, car les nuages se chevauchent."
+    }
+  ],
+
+  "plan_b": [
+    "Si les reliquats de S1 débordent au-delà de 1:00 : finir le perceptron, mais laisser la figure des frontières de S1 pour la maison.",
+    "La tâche 6 (courbes selon $\\eta$) passe à la maison si elle ne tient pas. Elle est indépendante du reste.",
+    "En dernier recours, garder **la vérification du gradient** (tâche 4) : c'est l'outil qui servira jusqu'en S10.",
+    "Ne jamais sauter un test pour gagner du temps."
+  ],
+
+  "livrables": [
+    "`S1/src/perceptron.py` et ses tests verts",
+    "`S2/src/regression_logistique.py` et `S2/src/verif_gradient.py`, avec `python -m pytest` entièrement vert dans `S2/`",
+    "`S2/figures/s2_couts_eta.png`",
+    "Entrées de S1 et S2 dans les journaux",
+    "Fiche-équations A5 n°2",
+    "Commit « S2 » poussé sur `main`"
+  ],
+
+  "questions_jury": [
+    {
+      "question": "Pourquoi ne pas garder la fonction échelon du perceptron ?",
+      "piste": "Sa dérivée est nulle partout sauf en 0 : la descente de gradient ne saurait pas dans quel sens bouger $w$."
+    },
+    {
+      "question": "Pourquoi l'entropie croisée plutôt que l'erreur quadratique avec une sigmoïde ?",
+      "piste": "Avec $(p - y)^2$, on obtient $\\partial L / \\partial z = 2(p - y)\\,p(1 - p)$ : le gradient s'écrase quand $p$ est proche de 0 ou de 1, même si la prédiction est fausse."
+    },
+    {
+      "question": "Comment savez-vous que votre gradient est juste ?",
+      "piste": "Comparaison avec les différences finies centrées en un point aléatoire : erreur relative inférieure à $10^{-6}$."
+    },
+    {
+      "question": "Pourquoi des différences **centrées** ?",
+      "piste": "Par Taylor, l'erreur est en $O(\\varepsilon^2)$ au lieu de $O(\\varepsilon)$ pour $\\frac{f(w + \\varepsilon e_i) - f(w)}{\\varepsilon}$ : les termes d'ordre 2 s'annulent."
+    },
+    {
+      "question": "Comment choisissez-vous $\\eta$ ?",
+      "piste": "Expérimentalement : on fait varier $\\eta$ seul, à données et initialisation fixées, et on compare les courbes de coût. On montre la figure."
+    }
+  ],
+
+  "ancrage": {
+    "phrase": "∂L/∂z = p − y : le gradient, c'est l'écart entre la prédiction et la vérité.",
+    "fiche": "Fiche A5 n°2 : la sigmoïde et sa dérivée, l'entropie croisée, la dérivation de $p - y$ en 3 lignes, le tableau des dimensions du gradient, et la formule des différences finies centrées."
+  },
+
+  "etonnement": "pourquoi $\\eta$ ne changeait rien en S1 (bonus) et change tout ici, ou à partir de quel $\\eta$ le coût remonte.",
+
+  "suite": {
+    "id": "S03",
+    "titre": "MLP et rétropropagation manuelle",
+    "a_relire": "La veille : la fiche n°2 et la ligne « première action » du journal. Pour prendre de l'avance : écrire la règle de la chaîne pour $L(\\sigma(W_2\\,\\sigma(W_1 x)))$."
+  }
+}
