@@ -19,7 +19,7 @@
     ],
     "alertes": [
       "Le journal de S1 est vide. Le remplir en premier (5 min) : c'est la seule trace qui fait foi, et la préparation automatique du lundi s'en sert.",
-      "Les reliquats de S1 prennent 20 min sur le créneau Code. L'expérience sur $\\eta$ (tâche 6) passe donc en bonus : à finir à la maison si elle ne tient pas en séance.",
+      "Les reliquats de S1 prennent 20 min sur le créneau Code. L'expérience sur $\\eta$ (tâches 11 et 12) et la figure de S1 (tâche 13) passent donc en bonus : à finir à la maison si elles ne tiennent pas en séance.",
       "Le code est rangé par séance (`S1/`, `S2/`), alors que le plan prévoit `src/` et `tests/` à la racine. Lancer `pytest` **depuis le dossier de la séance**, sinon les imports échouent.",
       "Python 3.11 n'est pas dans le PATH : `python` lance encore la 3.6. Utiliser `& \"$env:LOCALAPPDATA\\Programs\\Python\\Python311\\python.exe\" -m pytest`, ou IDLE 3.11."
     ]
@@ -38,7 +38,7 @@
     { "debut": 0, "fin": 10, "titre": "Rappel actif", "qui": "Chacun seul", "contenu": "Chacun redessine de tête l'hyperplan de S1 avec $w$ normal, puis répond aux questions de rappel ci-dessous. Ensuite, on remplit ensemble `S1/journal.md`." },
     { "debut": 10, "fin": 15, "titre": "Relance", "qui": "Pilote", "contenu": "Dans `S1/`, lancer `python -m pytest -v` avec Python 3.11. Les tests passent, mais ils sont vides : c'est la première tâche à régler." },
     { "debut": 15, "fin": 40, "titre": "Théorie", "qui": "Les deux", "contenu": "Les 6 notions ci-dessous. La dérivation de $\\partial L / \\partial z = p - y$ se fait au tableau, étape par étape (voir aussi `S2/GUIDE.md`, partie 1)." },
-    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Reliquats de S1, puis tâches 2 à 5. Chaque fonction est vérifiée dans IDLE avec sa **valeur de contrôle** (dans son docstring), puis par son test." },
+    { "debut": 40, "fin": 105, "titre": "Code", "qui": "Pilote au clavier, copilote vérifie les dimensions", "contenu": "Tâches 1 et 2 (reliquats de S1), puis tâches 3 à 10, une par fonction. Chaque fonction est vérifiée dans IDLE avec sa **valeur de contrôle** (dans son docstring), puis par son test. Les étapes, valeurs de contrôle et pièges sont détaillés dans chaque tâche ci-dessous." },
     { "debut": 105, "fin": 115, "titre": "Explication croisée", "qui": "Copilote", "contenu": "Le copilote explique à voix haute, sans regarder l'écran : pourquoi $\\partial L / \\partial z = p - y$, et pourquoi le gradient en $w$ a la même forme que $w$." },
     { "debut": 115, "fin": 120, "titre": "Clôture", "qui": "Pilote", "contenu": "Remplir `S2/journal.md` (bloc à copier en bas de page), commit « S2 », push sur `main`." }
   ],
@@ -128,93 +128,225 @@
   "taches": [
     {
       "id": "c1",
-      "titre": "Reliquats de S1 : perceptron et tests",
-      "duree": 20,
+      "titre": "Reliquat S1 : le perceptron",
+      "duree": 12,
       "fichier": "S1/src/perceptron.py",
       "bonus": false,
       "etapes": [
-        "`entrainer_perceptron(X, y, eta, n_epoques)` : écrire d'abord sur papier ce que fait **une** époque. Suivre le découpage de `S2/GUIDE.md`, partie 0.1.",
-        "Importer `neurone` en haut du fichier : `from neurone import neurone`.",
-        "Remplacer les `pass` de `S1/tests/test_neurone.py` et `S1/tests/test_perceptron.py` (5 tests, chacun décrit dans son docstring).",
-        "Faire échouer un test exprès (changer `y_et`) pour vérifier qu'il sert à quelque chose, puis le remettre."
+        "**Avant de coder**, écrire sur papier ce que fait **une** époque, en 4 lignes. Le copilote le relit.",
+        "**Reçoit** : `X` de forme `(n, d)`, `y` de forme `(n,)` (des 0 et des 1), `eta` (le pas), `n_epoques` (le nombre maximal d'époques).",
+        "**Renvoie** : `w` de forme `(d,)`, `b` (un nombre) et `erreurs`, la liste du nombre d'erreurs à chaque époque.",
+        "**Étape 1** : en haut du fichier, `from neurone import neurone`. Puis récupérer `n` et `d` avec `X.shape`.",
+        "**Étape 2** : initialiser `w` à un vecteur de `d` zéros (`np.zeros`), `b` à 0, et `erreurs` à une liste vide.",
+        "**Étape 3** : boucle extérieure sur les époques. Au début de **chaque époque**, un compteur d'erreurs repart de 0.",
+        "**Étape 4** : boucle intérieure sur les exemples `i`. Calculer la prédiction `y_chapeau` avec `neurone(X[i], w, b)`, puis l'écart `y[i] - y_chapeau`. Quelles sont les 3 valeurs possibles de l'écart ?",
+        "**Étape 5** : si l'écart n'est pas nul, appliquer $w \\leftarrow w + \\eta \\cdot \\text{écart} \\cdot x_i$, **et** $b \\leftarrow b + \\eta \\cdot \\text{écart}$, puis ajouter 1 au compteur.",
+        "**Étape 6** : à la fin de l'époque, ajouter le compteur à `erreurs`. S'il vaut 0, sortir avec `break`. Après les boucles, renvoyer `w, b, erreurs`.",
+        "**Contrôle dans IDLE** : sur ET avec `eta=1` et `n_epoques=100`, `erreurs` finit par 0 et `neurone_batch(X, w, b)` redonne `[0, 0, 0, 1]`. Sur XOR, `erreurs` ne contient jamais 0.",
+        "**Piège 1** : oublier la mise à jour de `b`. ET ne converge alors jamais : avec $b = 0$, que vaut la sortie pour $x = (0, 0)$ ?",
+        "**Piège 2** : remettre le compteur à 0 dans la boucle sur les exemples, au lieu du début de l'époque."
       ],
-      "test": "Dans `S1/`, `python -m pytest -v` affiche 5 tests `PASSED`, dont `test_xor_echoue`."
+      "test": "Pas de test à part : les tests de la tâche 2 vérifient cette fonction."
     },
     {
       "id": "c2",
-      "titre": "Sigmoïde stable et sa dérivée",
-      "duree": 10,
-      "fichier": "S2/src/regression_logistique.py",
+      "titre": "Reliquat S1 : les 5 tests",
+      "duree": 8,
+      "fichier": "S1/tests/",
       "bonus": false,
       "etapes": [
-        "`sigmoide(z)` : écrire d'abord la version naïve, puis essayer `sigmoide(-1000)` dans IDLE et lire le warning.",
-        "Rendre la fonction stable en choisissant la formule selon le signe de $z$ (notion 1). Attention : `np.where` calcule les **deux** branches.",
-        "`derivee_sigmoide(z)` : appeler `sigmoide` une seule fois.",
-        "Valeurs de contrôle : $\\sigma(0) = 0{,}5$, $\\sigma(2) \\approx 0{,}8808$, $\\sigma'(0) = 0{,}25$."
+        "**Schéma d'un test** : préparer de petites données, appeler la fonction, puis écrire `assert` suivi de ce qui doit être vrai. Importer les fonctions en haut du fichier (`from neurone import ...`).",
+        "`test_heaviside` : `assert heaviside(0) == 1`, puis un nombre négatif donne 0, puis `np.array_equal(heaviside(np.array([-1, 0, 2])), [0, 1, 1])`.",
+        "`test_batch_egal_boucle` : `rng = np.random.default_rng(0)`, puis `X = rng.normal(size=(50, 3))`, un `w` de taille 3 et un `b`. Construire la version boucle avec une liste de `neurone(x, w, b)` pour chaque ligne `x` de `X`. Comparer avec `np.array_equal`, et vérifier que la forme vaut `(50,)`.",
+        "`test_et` et `test_ou` : `erreurs[-1] == 0`, et `neurone_batch(X, w, b)` redonne exactement `y`.",
+        "`test_xor_echoue` : après 100 époques, `min(erreurs) > 0`. Un test peut documenter un échec attendu.",
+        "**Vérifier que les tests servent** : changer `y_et` exprès, constater qu'un test devient rouge, puis remettre la bonne valeur."
       ],
-      "test": "`S2/tests/test_regression_logistique.py` : `test_sigmoide_zero`, `test_sigmoide_symetrie`, `test_sigmoide_stable` (aucun warning sur $[-1000, 0, 1000]$) et `test_derivee_sigmoide`."
+      "test": "Dans `S1/`, `python -m pytest -v` affiche 5 tests `PASSED`."
     },
     {
       "id": "c3",
-      "titre": "Régression logistique : probabilités, coût, gradient",
-      "duree": 15,
+      "titre": "Sigmoïde stable",
+      "duree": 7,
       "fichier": "S2/src/regression_logistique.py",
       "bonus": false,
       "etapes": [
-        "`probabilites(X, w, b)` : comme `neurone_batch` de S1, avec `sigmoide` à la place de `heaviside`. Sortie de forme `(n,)`.",
-        "`cout(X, y, w, b)` : entropie croisée moyenne, avec `np.clip` avant `np.log`. Contrôle : $\\ln 2 \\approx 0{,}6931$ quand $w = 0$ et $b = 0$.",
-        "`gradient(X, y, w, b)` : renvoie `(grad_w, grad_b)`. Afficher `grad_w.shape`, qui doit valoir `(d,)`.",
-        "Contrôle du gradient : la valeur à la main de la notion 4."
+        "**Reçoit** : `z`, un nombre ou un tableau de n'importe quelle forme. **Renvoie** : un tableau de même forme, à valeurs dans $[0, 1]$.",
+        "**Étape 1** : convertir `z` en tableau de flottants au début avec `np.asarray(z, dtype=float)`, pour que la fonction marche aussi sur un simple nombre.",
+        "**Étape 2** : écrire d'abord la version naïve $\\frac{1}{1 + e^{-z}}$, directement.",
+        "**Étape 3** : dans IDLE (F5 pour charger le fichier), essayer `sigmoide(-1000)`. Lire le `RuntimeWarning` : quel calcul déborde ?",
+        "**Étape 4** : au tableau, montrer que $\\frac{1}{1 + e^{-z}} = \\frac{e^{z}}{1 + e^{z}}$. Pour $z < 0$, laquelle des deux formules ne calcule jamais l'exponentielle d'un grand nombre positif ? Et pour $z \\ge 0$ ?",
+        "**Étape 5** : utiliser la bonne formule selon le signe de $z$. Deux pistes : des masques (`z >= 0` et `z < 0`) qui remplissent un tableau résultat, ou une expression qui n'utilise que $e^{-|z|}$.",
+        "**Contrôle dans IDLE** : `sigmoide(0)` donne 0,5 ; `sigmoide(2)` donne 0,8807970… ; `sigmoide(-2)` donne 0,1192029…, soit `1 - sigmoide(2)` ; `sigmoide(np.array([-1000, 0, 1000]))` donne `[0, 0.5, 1]` **sans aucun warning**.",
+        "**Piège 1** : `np.where` calcule les **deux** branches sur tout le tableau avant de choisir. Le débordement a donc quand même lieu, même si la bonne valeur est gardée.",
+        "**Piège 2** : avec $\\frac{e^{z}}{1 + e^{z}}$ pour $z = 1000$, on obtient `nan` ($\\infty / \\infty$)."
       ],
-      "test": "`test_probabilites_forme`, `test_cout_vaut_ln2_en_zero` et `test_gradient_valeur_connue`."
+      "test": "Dans `S2/tests/test_regression_logistique.py` : `test_sigmoide_zero`, `test_sigmoide_symetrie` ($\\sigma(-z) = 1 - \\sigma(z)$ sur `np.linspace(-10, 10, 21)`, avec `np.allclose`) et `test_sigmoide_stable` (le bloc `warnings.catch_warnings()` est décrit dans le docstring)."
     },
     {
       "id": "c4",
-      "titre": "Vérification numérique du gradient",
-      "duree": 15,
-      "fichier": "S2/src/verif_gradient.py",
+      "titre": "Dérivée de la sigmoïde",
+      "duree": 3,
+      "fichier": "S2/src/regression_logistique.py",
       "bonus": false,
       "etapes": [
-        "`gradient_numerique(f, w, eps=1e-5)` : générique, `f` prend un vecteur et renvoie un nombre. Une copie de `w` pour $+\\varepsilon$, une autre pour $-\\varepsilon$.",
-        "Contrôle : avec `f = lambda v: np.sum(v ** 2)` en $w = (1, 2, 3)$, on doit trouver environ $(2, 4, 6)$, et `w` ne doit pas avoir changé.",
-        "`erreur_relative(g1, g2)` : renvoyer 0 si les deux normes sont nulles.",
-        "Comparer avec `gradient` en un $w$ **aléatoire** (pas nul) : `f = lambda v: cout(X, y, v, b)`."
+        "**Reçoit** : `z`. **Renvoie** : $\\sigma(z)(1 - \\sigma(z))$, de même forme que `z`.",
+        "**Étape unique** : calculer `s = sigmoide(z)` **une seule fois**, puis renvoyer la formule avec `s`.",
+        "**Contrôle** : `derivee_sigmoide(0)` donne 0,25, le maximum (pourquoi ?). `derivee_sigmoide(10)` donne environ $4{,}5 \\times 10^{-5}$ : la sigmoïde est presque plate.",
+        "**À savoir** : cette fonction ne sert pas dans `gradient`, grâce à la simplification $\\partial L / \\partial z = p - y$. Elle sert à comprendre ce résultat et à le vérifier."
       ],
-      "test": "`S2/tests/test_verif_gradient.py` : erreur relative $< 10^{-6}$ en $w$ et en $b$, et `test_gradient_numerique_ne_modifie_pas_w`."
+      "test": "`test_derivee_sigmoide` : sur `z = np.linspace(-5, 5, 11)`, comparer avec `(sigmoide(z + eps) - sigmoide(z - eps)) / (2 * eps)` pour `eps = 1e-5`, avec `np.allclose`."
     },
     {
       "id": "c5",
+      "titre": "Probabilités (forward)",
+      "duree": 3,
+      "fichier": "S2/src/regression_logistique.py",
+      "bonus": false,
+      "etapes": [
+        "**Reçoit** : `X` `(n, d)`, `w` `(d,)`, `b` un nombre. **Renvoie** : `p` de forme `(n,)`, la probabilité que chaque exemple soit de classe 1.",
+        "**Étape 1** : calculer `z = X @ w + b` et écrire sa forme en commentaire.",
+        "**Étape 2** : renvoyer `sigmoide(z)`. C'est `neurone_batch` de S1, avec `sigmoide` à la place de `heaviside`.",
+        "**Contrôle** : `X = np.array([[1., 2.], [3., 4.]])`, `w = np.zeros(2)`, `b = 0` donnent `[0.5, 0.5]`. Avec $w = 0$, le modèle n'a aucune préférence."
+      ],
+      "test": "`test_probabilites_forme` : sur un `X` aléatoire `(50, 3)`, `p.shape == (50,)` et toutes les valeurs sont strictement entre 0 et 1."
+    },
+    {
+      "id": "c6",
+      "titre": "Coût : entropie croisée",
+      "duree": 5,
+      "fichier": "S2/src/regression_logistique.py",
+      "bonus": false,
+      "etapes": [
+        "**Reçoit** : `X`, `y`, `w`, `b`. **Renvoie** : un seul nombre, $L = -\\frac{1}{n} \\sum_i \\left[ y_i \\ln p_i + (1 - y_i) \\ln(1 - p_i) \\right]$.",
+        "**Étape 1** : calculer `p` avec `probabilites`.",
+        "**Étape 2** : borner `p` dans $[10^{-12} ; 1 - 10^{-12}]$ avec `np.clip`, pour éviter $\\ln 0 = -\\infty$.",
+        "**Étape 3** : calculer le terme de chaque exemple (un tableau `(n,)`), puis sa moyenne avec `np.mean`. Ne pas oublier le signe moins.",
+        "**Contrôle 1** : avec $w = 0$ et $b = 0$, le coût vaut $\\ln 2 \\approx 0{,}693147$, quelles que soient les données. Le vérifier à la main : que vaut $p$ ?",
+        "**Contrôle 2** : `X = [[1, 2], [3, 4]]`, `y = [0, 1]`, `w = [1, -1]`, `b = 0` donnent environ 0,8133. Indice : $z = (-1, -1)$, calculer $p$ puis les deux termes.",
+        "**Piège** : un coût négatif signifie qu'il manque le signe moins. Et utiliser `np.log` (logarithme népérien), pas `np.log10`."
+      ],
+      "test": "`test_cout_vaut_ln2_en_zero` : `X` aléatoire `(20, 4)`, `y = rng.integers(0, 2, size=20)`, `w = np.zeros(4)`, `b = 0` ; comparer à `np.log(2)` avec `np.isclose`."
+    },
+    {
+      "id": "c7",
+      "titre": "Gradient à la main",
+      "duree": 7,
+      "fichier": "S2/src/regression_logistique.py",
+      "bonus": false,
+      "etapes": [
+        "**Reçoit** : `X`, `y`, `w`, `b`. **Renvoie** : le couple `(grad_w, grad_b)`, avec `grad_w` de forme `(d,)` et `grad_b` un nombre.",
+        "**Formules** (notion 4) : $\\nabla_w L = \\frac{1}{n} X^\\top (p - y)$ et $\\frac{\\partial L}{\\partial b} = \\text{moyenne}(p - y)$.",
+        "**Étape 1** : calculer `p`, puis `erreur = p - y`. Quelle est sa forme ?",
+        "**Étape 2** : récupérer `n` avec `X.shape`, puis calculer `grad_w`. L'afficher avec `print(grad_w.shape)` : on doit lire `(d,)`, comme `w`.",
+        "**Étape 3** : calculer `grad_b` avec `np.mean`.",
+        "**Contrôle, à faire aussi sur papier** : `X = [[1, 2], [3, 4]]`, `y = [0, 1]`, `w = 0`, `b = 0` donnent $p = (0{,}5 ; 0{,}5)$, $p - y = (0{,}5 ; -0{,}5)$, `grad_w = [-0.5, -0.5]` et `grad_b = 0`.",
+        "**Piège 1** : `X @ (p - y)` au lieu de `X.T @ (p - y)`. Si $n = d$, NumPy ne dit rien et le résultat est faux.",
+        "**Piège 2** : diviser par $n$ deux fois. Le vrai juge sera la tâche 8."
+      ],
+      "test": "`test_gradient_valeur_connue` : la valeur de contrôle ci-dessus, avec `np.allclose`, plus `grad_w.shape == (2,)`."
+    },
+    {
+      "id": "c8",
+      "titre": "Vérification numérique du gradient",
+      "duree": 10,
+      "fichier": "S2/src/verif_gradient.py",
+      "bonus": false,
+      "etapes": [
+        "**Reçoit** : `f`, une fonction qui prend un vecteur et renvoie un nombre ; `w`, le point (forme `(d,)`) ; `eps = 1e-5`. **Renvoie** : `g`, de même forme que `w`.",
+        "**Formule** : pour chaque coordonnée $i$, $g_i = \\frac{f(w + \\varepsilon e_i) - f(w - \\varepsilon e_i)}{2\\varepsilon}$, où $e_i$ vaut 1 en position $i$ et 0 ailleurs.",
+        "**Étape 1** : convertir `w` en flottants, puis créer `g = np.zeros_like(w)`.",
+        "**Étape 2** : pour chaque indice `i`, faire une **copie** de `w` et ajouter `eps` en position `i` (`w_plus`), puis une autre copie où on retire `eps` (`w_moins`).",
+        "**Étape 3** : remplir `g[i]` avec la formule, puis renvoyer `g` après la boucle.",
+        "**Contrôle** : `f = lambda v: np.sum(v ** 2)` en `w = np.array([1., 2., 3.])` donne environ `[2., 4., 6.]` (le gradient de $\\sum v_i^2$ est $2v$). Après l'appel, `w` vaut encore exactement `[1., 2., 3.]`.",
+        "**Piège 1** : `w_plus = w` ne copie **pas** le tableau : les deux noms désignent le même objet, et modifier `w_plus` modifie `w`. Utiliser `w.copy()`.",
+        "**Piège 2** : un `eps` trop petit ($10^{-12}$) : les erreurs d'arrondi dominent.",
+        "**Le test le plus important de la séance** : comparer `gradient` (tâche 7) au gradient numérique en un `w` **aléatoire**, pas nul. Pour faire varier `w` seul : `f = lambda v: cout(X, y, v, b)`. Pour `b` : `f = lambda v: cout(X, y, w, v[0])`, au point `np.array([b])`."
+      ],
+      "test": "Dans `S2/tests/test_verif_gradient.py` : `test_gradient_numerique_somme_des_carres`, `test_gradient_numerique_ne_modifie_pas_w`, puis `test_gradient_regression_logistique_en_w` et `_en_b` : erreur relative inférieure à $10^{-6}$."
+    },
+    {
+      "id": "c9",
+      "titre": "Erreur relative",
+      "duree": 3,
+      "fichier": "S2/src/verif_gradient.py",
+      "bonus": false,
+      "etapes": [
+        "**Reçoit** : deux tableaux de même forme. **Renvoie** : $\\frac{\\lVert g_1 - g_2 \\rVert}{\\lVert g_1 \\rVert + \\lVert g_2 \\rVert}$, un nombre entre 0 et 1.",
+        "**Étape** : normes avec `np.linalg.norm`. Si le dénominateur vaut 0 (deux gradients nuls), renvoyer 0.0 pour ne pas diviser par zéro.",
+        "**Contrôle** : `[1, 2]` et `[1, 2]` donnent 0 ; `[1, 0]` et `[0, 1]` donnent 0,7071…",
+        "**Lecture** : moins de $10^{-6}$, c'est juste ; entre $10^{-6}$ et $10^{-3}$, c'est suspect ; plus de $10^{-3}$, il y a une erreur dans le gradient à la main."
+      ],
+      "test": "`test_erreur_relative` : les deux valeurs de contrôle ci-dessus."
+    },
+    {
+      "id": "c10",
       "titre": "Descente de gradient",
       "duree": 5,
       "fichier": "S2/src/regression_logistique.py",
       "bonus": false,
       "etapes": [
-        "`entrainer(X, y, eta, n_iterations)` : part de $w = 0$, $b = 0$ ; à chaque itération, enregistrer le coût, puis faire un pas **contre** le gradient.",
-        "Contrôle : `couts[0]` vaut $\\ln 2$, et la liste décroît sur la porte ET avec $\\eta = 1$."
+        "**Reçoit** : `X`, `y`, `eta`, `n_iterations`. **Renvoie** : `w`, `b` et `couts`, la liste des `n_iterations` coûts, chacun mesuré **avant** la mise à jour.",
+        "**Étape 1** : `w` à `d` zéros, `b = 0.0`, `couts` liste vide.",
+        "**Étape 2** : à chaque itération, ajouter `cout(X, y, w, b)` à la liste, calculer `(grad_w, grad_b)`, puis mettre à jour `w` et `b`. Quel signe ? On **descend** la pente.",
+        "**Contrôle** : `couts[0]` vaut $\\ln 2 \\approx 0{,}6931$, puisque $w = 0$ au départ. Sur la porte ET avec $\\eta = 1$, la liste décroît.",
+        "**Piège** : un `+` au lieu d'un `-` fait monter le coût. Et contrairement au perceptron, on ne s'arrête pas quand tout est bien classé : on fait toujours `n_iterations` pas."
       ],
-      "test": "`test_entrainement_fait_baisser_le_cout` : sur ET, 1000 itérations, `couts[-1] < 0.1` et les prédictions $p > 0{,}5$ redonnent `y`."
+      "test": "`test_entrainement_fait_baisser_le_cout` : sur ET (`X` à 4 lignes, `y = [0, 0, 0, 1]`), 1000 itérations avec $\\eta = 1$ : `len(couts) == 1000`, `couts[0]` proche de $\\ln 2$, `couts[-1] < 0.1`, et `p > 0.5` redonne `y`."
     },
     {
-      "id": "c6",
-      "titre": "Courbes de coût selon η",
-      "duree": 20,
+      "id": "c11",
+      "titre": "Deux nuages gaussiens",
+      "duree": 5,
       "fichier": "S2/experiences/s2_couts_eta.py",
       "bonus": true,
       "etapes": [
-        "`generer_nuages(n_par_classe, graine)` : deux nuages gaussiens centrés en $(-1, -1)$ et $(1, 1)$. Contrôle : `X.shape == (200, 2)` pour 100 points par classe.",
-        "`tracer_couts_selon_eta()` : générer les données **une seule fois**, puis tracer sur une même figure les coûts pour $\\eta \\in \\{0{,}01 ; 0{,}1 ; 1 ; 10\\}$, 200 itérations.",
-        "Enregistrer `S2/figures/s2_couts_eta.png`.",
-        "Avec ces données, $\\eta = 10$ ne diverge pas encore. Essayer 50 et 100 : à partir de quand le coût remonte-t-il ? Le noter en ligne *étonnement*."
+        "**Reçoit** : `n_par_classe` et `graine`. **Renvoie** : `X` de forme `(2 * n_par_classe, 2)` et `y` de forme `(2 * n_par_classe,)`.",
+        "**Étape 1** : `rng = np.random.default_rng(graine)`.",
+        "**Étape 2** : classe 0 avec `rng.normal(loc=..., scale=1.0, size=(n_par_classe, 2))`, centrée en $(-1, -1)$ ; classe 1 centrée en $(1, 1)$.",
+        "**Étape 3** : empiler les deux nuages avec `np.vstack`. Pour `y` : `n_par_classe` zéros puis `n_par_classe` uns (`np.concatenate`).",
+        "**Contrôle** : avec 100 points par classe, `X.shape == (200, 2)`, `y.shape == (200,)` et `y.sum() == 100`. Les tracer une fois avec `plt.scatter(X[:, 0], X[:, 1], c=y)` : ils se chevauchent un peu, c'est voulu."
       ],
-      "test": "La figure existe et montre 4 courbes : $\\eta = 0{,}01$ descend lentement, $\\eta = 1$ et $\\eta = 10$ atteignent vite le plateau.",
-      "solution": "Valeurs de référence (graine 0, 200 itérations) : le coût final vaut environ 0,36 pour $\\eta = 0{,}01$, 0,23 pour $\\eta = 0{,}1$ et 0,226 pour $\\eta = 1$ et 10. Avec $\\eta = 50$, le coût remonte vers 0,37 : le pas est trop grand. Le plateau à 0,226 n'est pas nul, car les nuages se chevauchent."
+      "test": ""
+    },
+    {
+      "id": "c12",
+      "titre": "Courbes de coût selon η",
+      "duree": 15,
+      "fichier": "S2/experiences/s2_couts_eta.py",
+      "bonus": true,
+      "etapes": [
+        "**Principe** : on ne change **qu'une** variable, $\\eta$. Mêmes données, même départ $w = 0$, même nombre d'itérations.",
+        "**Étape 1** : générer les données **une seule fois**, avant la boucle. Sinon, on change deux variables à la fois.",
+        "**Étape 2** : `fig, ax = plt.subplots(figsize=(7, 4))`, puis pour chaque $\\eta \\in \\{0{,}01 ; 0{,}1 ; 1 ; 10\\}$ : `entrainer(X, y, eta, 200)`, puis `ax.plot(couts, label=...)`.",
+        "**Étape 3** : titre, noms des axes (« itération », « coût »), `ax.legend()`. Essayer aussi `ax.set_yscale('log')` : quelle version se lit le mieux ?",
+        "**Étape 4** : enregistrer dans `S2/figures/s2_couts_eta.png` avec `fig.savefig(chemin, dpi=150)`. La variable `DOSSIER_S2` est déjà fournie en haut du fichier.",
+        "**À observer** : quel $\\eta$ est trop lent ? $\\eta = 10$ diverge-t-il ? Sinon, essayer 50 et 100 : à partir de quand le coût remonte-t-il ? Le noter en ligne *étonnement*."
+      ],
+      "test": "La figure existe et montre 4 courbes de coût qui partent toutes de $\\ln 2$.",
+      "solution": "Valeurs de référence (graine 0, 100 points par classe, 200 itérations) : le coût final vaut environ 0,36 pour $\\eta = 0{,}01$, 0,23 pour $\\eta = 0{,}1$ et 0,226 pour $\\eta = 1$ et $\\eta = 10$. Avec $\\eta = 50$, le coût remonte vers 0,37 : le pas est trop grand. Le plateau à 0,226 n'est pas nul, car les nuages se chevauchent."
+    },
+    {
+      "id": "c13",
+      "titre": "Reliquat S1 : figure des frontières",
+      "duree": 10,
+      "fichier": "S1/experiences/s1_frontieres.py",
+      "bonus": true,
+      "etapes": [
+        "**Étape 1** : entraîner le perceptron sur ET, OU et XOR (100 époques).",
+        "**Étape 2** : une grille avec `np.linspace(-0.5, 1.5, 200)` puis `np.meshgrid`. Aplatir la grille en un tableau `(40000, 2)` avec `np.c_[gx.ravel(), gy.ravel()]`.",
+        "**Étape 3** : `neurone_batch` sur la grille, remettre le résultat à la forme de la grille avec `.reshape(gx.shape)`, puis `plt.contourf`.",
+        "**Étape 4** : ajouter les 4 points avec `plt.scatter`, colorés selon leur classe. Trois graphiques côte à côte avec `plt.subplots(1, 3)`.",
+        "**Étape 5** : enregistrer dans `S1/figures/s1_frontieres.png`."
+      ],
+      "test": "La figure montre une droite qui sépare ET et OU, mais aucune qui sépare XOR."
     }
   ],
 
   "plan_b": [
     "Si les reliquats de S1 débordent au-delà de 1:00 : finir le perceptron, mais laisser la figure des frontières de S1 pour la maison.",
-    "La tâche 6 (courbes selon $\\eta$) passe à la maison si elle ne tient pas. Elle est indépendante du reste.",
-    "En dernier recours, garder **la vérification du gradient** (tâche 4) : c'est l'outil qui servira jusqu'en S10.",
+    "Les tâches 11 et 12 (courbes selon $\\eta$) passent à la maison si elles ne tiennent pas. Elles sont indépendantes du reste.",
+    "En dernier recours, garder **la vérification du gradient** (tâche 8) : c'est l'outil qui servira jusqu'en S10.",
     "Ne jamais sauter un test pour gagner du temps."
   ],
 
